@@ -1,0 +1,604 @@
+<title>Behold Movement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one long scroll of full-bleed "slabs" alternating Azul / Grafite / Papel, as in the deck; content sits on a fixed left edge. */
+:root {
+  --blue: #1f5bf2;
+  --blue-soft: #3b6ff5;
+  --sky: #6e97ff;
+  --ink: #16171c;
+  --paper: #eceae5;
+  --mute: #8a8f9c;
+  --mute-ink: #3f434d;
+  --display: "Anton", "Impact", "Arial Narrow", sans-serif;
+  --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --gutter: clamp(16px, 6.5vw, 132px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--body); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; }
+
+/* ---------- slabs ---------- */
+.slab { position: relative; padding-inline: var(--gutter); padding-block: clamp(56px, 9vw, 120px) clamp(40px, 5vw, 64px); display: flex; flex-direction: column; gap: clamp(28px, 4vw, 48px); overflow: hidden; }
+.slab > * { min-width: 0; }
+.s-blue { background: var(--blue); color: var(--paper); }
+.s-ink { background: var(--ink); color: var(--paper); }
+.s-paper { background: var(--paper); color: var(--ink); }
+
+.eyebrow { font-family: var(--mono); font-weight: 700; font-size: 14px; letter-spacing: .18em; text-transform: uppercase; margin: 0; }
+.s-ink .eyebrow { color: var(--sky); }
+.s-paper .eyebrow { color: var(--blue); }
+.s-blue .eyebrow { color: var(--paper); font-weight: 400; }
+
+.slab-foot { display: flex; justify-content: space-between; gap: 16px; font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; margin-top: auto; padding-top: clamp(16px, 3vw, 40px); }
+.s-ink .slab-foot { color: var(--mute); }
+.s-paper .slab-foot { color: #5d616c; }
+.s-blue .slab-foot { color: var(--paper); }
+.slab-foot span:last-child { font-variant-numeric: tabular-nums; }
+
+.d { font-family: var(--display); font-weight: 400; text-transform: uppercase; line-height: .95; letter-spacing: .005em; margin: 0; text-wrap: balance; }
+.d-xxl { font-size: clamp(88px, 22vw, 340px); line-height: .82; }
+.d-xl { font-size: clamp(56px, 11vw, 168px); }
+.d-l { font-size: clamp(44px, 7.4vw, 112px); }
+.d-m { font-size: clamp(32px, 4.6vw, 68px); }
+.d-s { font-size: clamp(24px, 2.6vw, 38px); line-height: 1.05; }
+.lede { font-size: clamp(20px, 2.4vw, 34px); font-weight: 600; line-height: 1.25; max-width: 30ch; margin: 0; text-wrap: pretty; }
+.lede.light { font-weight: 400; }
+.s-paper .lede { color: var(--mute-ink); }
+.c-blue { color: var(--blue); }
+.c-sky { color: var(--sky); }
+.c-ink { color: var(--ink); }
+.c-paper { color: var(--paper); }
+.verse { font-family: var(--mono); font-size: clamp(15px, 1.6vw, 21px); line-height: 1.6; margin: 0; }
+
+/* ---------- top bar ---------- */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-inline: var(--gutter); padding-block: 14px; background: var(--ink); border-bottom: 1px solid #2a2c34; font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.bar .mark { font-family: var(--display); font-weight: 400; font-size: 22px; letter-spacing: .02em; text-decoration: none; }
+.bar .mark b { color: var(--sky); font-weight: 400; }
+.bar nav { display: flex; gap: clamp(12px, 2.4vw, 28px); flex-wrap: wrap; }
+.bar nav a { text-decoration: none; color: var(--mute); }
+.bar nav a:hover { color: var(--paper); }
+.bar .cta { text-decoration: none; background: var(--blue); color: var(--paper); padding: 9px 14px; border-radius: 4px; white-space: nowrap; }
+.bar .cta:hover { background: var(--blue-soft); }
+@media (max-width: 760px) { .bar nav { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { padding-block-start: clamp(56px, 8vw, 110px); }
+.hero .stack { display: flex; flex-direction: column; }
+.hero .movement { font-family: var(--display); font-size: clamp(52px, 13vw, 200px); line-height: .82; color: var(--paper); text-transform: uppercase; margin: 0; }
+.hero .behold { font-family: var(--display); font-size: clamp(96px, 25vw, 380px); line-height: .8; color: var(--ink); text-transform: uppercase; margin: 0; margin-left: -.02em; }
+.hero .movement, .hero .behold { animation: rise .9s cubic-bezier(.2,.7,.1,1) both; }
+.hero .behold { animation-delay: .12s; }
+@keyframes rise { from { transform: translateY(18px); opacity: .0; } to { transform: none; opacity: 1; } }
+.hero-meta { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+.date-chip { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; border: 1.5px solid var(--paper); padding: 10px 14px; border-radius: 4px; }
+
+/* ---------- question / problem ---------- */
+.tall { min-height: min(86vh, 820px); }
+.tall .push { margin-top: auto; }
+
+/* ---------- behold = eis ---------- */
+.verbs { display: flex; flex-wrap: wrap; gap: .1em .5em; font-family: var(--display); font-size: clamp(32px, 5.4vw, 80px); line-height: 1; text-transform: uppercase; color: var(--paper); margin: 0; padding: 0; list-style: none; }
+.verbs li { transition: color .2s; }
+.verbs li:hover { color: var(--ink); }
+
+/* ---------- mission pillars ---------- */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.tile { background: var(--ink); color: var(--paper); border-radius: 6px; padding: 22px 24px 26px; display: flex; flex-direction: column; gap: 6px; }
+.tile .n { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--sky); font-variant-numeric: tabular-nums; }
+.tile .t { font-family: var(--display); font-size: clamp(24px, 2.6vw, 38px); text-transform: uppercase; line-height: 1; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- not a ... ---------- */
+.struck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35em; font-family: var(--body); font-weight: 600; font-size: clamp(24px, 3.2vw, 46px); line-height: 1.1; color: var(--mute); }
+.struck li { text-decoration: line-through; text-decoration-thickness: .08em; text-decoration-color: currentColor; }
+.s-paper .struck { color: #636874; }
+
+/* ---------- vision steps ---------- */
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; }
+.steps li { border-top: 6px solid var(--blue); padding-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.steps li:last-child { border-color: var(--ink); }
+.steps .n { font-family: var(--mono); font-weight: 700; font-size: 18px; color: var(--blue); }
+.steps li:last-child .n { color: var(--ink); }
+@media (max-width: 900px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; } }
+
+/* ---------- two column ---------- */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(28px, 5vw, 80px); align-items: center; }
+.split.top { align-items: start; }
+@media (max-width: 900px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.cities { list-style: none; margin: 0; padding: 0; font-family: var(--display); font-size: clamp(26px, 3vw, 44px); text-transform: uppercase; line-height: 1.2; }
+.cities li:first-child { color: var(--ink); }
+.map svg, .orbit svg, .dots svg { width: 100%; height: auto; display: block; max-width: 100%; }
+.caption { font-family: var(--mono); font-size: 13px; text-align: right; margin: 8px 0 0; }
+
+/* ---------- neighbourhoods ---------- */
+.hoods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 24px; list-style: none; margin: 0; padding: 0; }
+.hoods li { border-top: 2px solid var(--ink); padding-block: 16px 22px; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: clamp(17px, 1.6vw, 22px); }
+.hoods li::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--blue); flex: none; }
+@media (max-width: 900px) { .hoods { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px) { .hoods { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- six fronts ---------- */
+.fronts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.front { all: unset; box-sizing: border-box; cursor: pointer; background: var(--paper); color: var(--ink); border-radius: 6px; padding: 22px 26px 26px; display: flex; flex-direction: column; gap: 6px; transition: transform .15s, background .15s; }
+.front:hover { transform: translateY(-2px); }
+.front:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.front[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+.front .n { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--blue); }
+.front[aria-selected="true"] .n { color: var(--sky); }
+.front .t { font-family: var(--display); font-size: clamp(24px, 2.8vw, 42px); text-transform: uppercase; line-height: 1; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .fronts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.panel { background: var(--paper); color: var(--ink); border-radius: 6px; padding: clamp(24px, 4vw, 56px); }
+.panel .split { align-items: start; }
+.checks { list-style: none; margin: 0; padding: 0; }
+.checks li { display: flex; align-items: center; gap: 18px; border-bottom: 2px solid var(--ink); padding-block: 18px; font-weight: 700; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.15; }
+.checks li::before { content: ""; flex: none; width: 22px; height: 14px; border-left: 4px solid var(--blue); border-bottom: 4px solid var(--blue); transform: rotate(-45deg) translate(2px, -3px); }
+.checks.num li::before { display: none; }
+.checks.num .k { font-family: var(--display); font-weight: 400; font-size: 1.9em; color: var(--blue); min-width: 1.4em; line-height: 1; }
+.panel .big { font-family: var(--display); font-size: clamp(96px, 14vw, 200px); color: var(--blue); line-height: .85; }
+.panel .lede { color: var(--mute-ink); font-weight: 400; }
+.panel .lede.accent { color: var(--blue); font-weight: 600; }
+
+/* ---------- training ---------- */
+.alert { border: 2px solid var(--sky); border-radius: 6px; padding: 22px 26px; display: flex; align-items: center; gap: 20px; font-weight: 700; font-size: clamp(19px, 2.2vw, 30px); line-height: 1.2; }
+.alert svg { flex: none; width: 44px; height: 44px; }
+.placeholder { font-family: var(--mono); color: var(--mute); font-size: 15px; margin: 0; }
+
+/* ---------- schedule ---------- */
+.agenda { width: 100%; border-collapse: collapse; }
+.agenda td { border-top: 1px solid #2f323b; padding-block: 14px; vertical-align: baseline; }
+.agenda tr:last-child td { border-bottom: 1px solid #2f323b; }
+.agenda .h { font-family: var(--display); font-size: clamp(26px, 3.2vw, 46px); color: var(--sky); text-transform: uppercase; white-space: nowrap; padding-right: 32px; width: 28%; line-height: 1; font-variant-numeric: tabular-nums; }
+.agenda .w { font-weight: 600; font-size: clamp(18px, 2vw, 28px); }
+.agenda tr.final .h, .agenda tr.final .w { color: var(--paper); font-weight: 700; }
+@media (max-width: 560px) { .agenda tr { display: flex; flex-direction: column; border-top: 1px solid #2f323b; padding-block: 12px; } .agenda td { border: 0 !important; padding: 0; width: auto; } }
+
+/* ---------- participate ---------- */
+.roles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.role { all: unset; box-sizing: border-box; cursor: pointer; border: 2.5px solid var(--ink); border-radius: 6px; padding: 20px 22px 30px; display: flex; flex-direction: column; gap: 6px; min-height: 150px; transition: background .15s, color .15s; }
+.role:hover { background: #e1ded7; }
+.role:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.role .n { font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--blue); }
+.role .t { font-family: var(--display); font-size: clamp(24px, 2.6vw, 38px); text-transform: uppercase; line-height: 1; overflow-wrap: anywhere; }
+.role[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.role[aria-pressed="true"] .n { color: var(--sky); }
+.role.signup { background: var(--blue); border-color: var(--blue); color: var(--paper); cursor: default; }
+.role.signup .n { color: var(--paper); font-weight: 400; }
+@media (max-width: 900px) { .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.picked { font-family: var(--mono); font-size: 14px; margin: 0; min-height: 1.5em; color: var(--mute-ink); }
+
+/* ---------- imagine ---------- */
+.imagine { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.imagine li { border-left: 5px solid var(--blue); padding-left: 24px; font-weight: 600; font-size: clamp(20px, 2.6vw, 38px); line-height: 1.2; }
+
+/* ---------- unity ---------- */
+.unity .d { line-height: .98; }
+
+/* ---------- closing ---------- */
+.poster { aspect-ratio: 3 / 4; max-width: 100%; width: min(100%, 420px); justify-self: end; background: var(--blue-soft); box-shadow: 0 30px 60px -20px rgba(10, 20, 60, .55); padding: 9% 7% 6%; display: flex; flex-direction: column; color: var(--paper); position: relative; overflow: hidden; }
+.poster::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(10,15,40,.22) 1px, transparent 1.2px); background-size: 4px 4px; mix-blend-mode: multiply; pointer-events: none; }
+.poster .pm { font-family: var(--display); font-size: clamp(36px, 7vw, 92px); line-height: .85; text-transform: uppercase; }
+.poster .pb { font-family: var(--display); font-size: clamp(64px, 13vw, 176px); line-height: .78; text-transform: uppercase; color: var(--ink); transform: scaleY(1.35); transform-origin: top left; }
+.poster .pf { margin-top: auto; display: flex; justify-content: space-between; font-family: var(--mono); font-weight: 700; font-size: 11px; letter-spacing: .04em; }
+@media (max-width: 900px) { .poster { justify-self: start; } }
+</style>
+
+<header class="bar">
+  <a class="mark" href="#topo">Behold <b>Movement</b></a>
+  <nav aria-label="Seções">
+    <a href="#missao">Missão</a>
+    <a href="#campo">Campo</a>
+    <a href="#frentes">Frentes</a>
+    <a href="#dia31">Dia 31</a>
+  </nav>
+  <a class="cta" href="#participar">Escolha sua frente</a>
+</header>
+
+<main>
+<!-- 01 HERO -->
+<section class="slab s-blue hero" id="topo">
+  <div class="stack">
+    <h1 class="movement">Movement</h1>
+    <p class="behold" aria-hidden="true">Behold</p>
+  </div>
+  <div class="hero-meta">
+    <p class="verse">"Eis o Cordeiro de Deus, que tira o pecado do mundo."<br>João 1:29</p>
+    <span class="date-chip">Dia 31 · Taboão da Serra</span>
+  </div>
+  <div class="slab-foot"><span>2026</span><span>Contemple Cristo</span></div>
+</section>
+
+<!-- 02 PERGUNTA -->
+<section class="slab s-ink tall">
+  <p class="eyebrow">Uma pergunta</p>
+  <h2 class="d d-l push">Quantas pessoas vivem ao nosso redor sem conhecer <span class="c-sky">verdadeiramente Jesus?</span></h2>
+  <div class="slab-foot"><span>Behold Movement</span><span>02</span></div>
+</section>
+
+<!-- 03 PROBLEMA -->
+<section class="slab s-paper">
+  <p class="eyebrow">O problema</p>
+  <h2 class="d d-l">Não é a falta<br>de pessoas.</h2>
+  <p class="lede">O problema é que muitos ainda não <span class="c-blue">contemplaram Cristo.</span></p>
+  <div class="slab-foot"><span>Behold Movement</span><span>03</span></div>
+</section>
+
+<!-- 04 BEHOLD = EIS -->
+<section class="slab s-blue">
+  <p class="eyebrow">O que significa Behold?</p>
+  <h2 class="d d-xl c-ink">Behold = Eis</h2>
+  <ul class="verbs"><li>Olhe.</li><li>Contemple.</li><li>Reconheça.</li><li>Veja.</li></ul>
+  <p class="verse">"Eis o Cordeiro de Deus." João 1:29</p>
+  <div class="slab-foot"><span>Behold Movement</span><span>04</span></div>
+</section>
+
+<!-- 05 MISSÃO -->
+<section class="slab s-paper" id="missao">
+  <p class="eyebrow">Nossa missão</p>
+  <h2 class="d d-l">Revelar Cristo<br>às pessoas.</h2>
+  <p class="lede">Levar Jesus além das quatro paredes da igreja.</p>
+  <p class="eyebrow">Através de</p>
+  <div class="tiles">
+    <div class="tile"><span class="n">01</span><span class="t">Louvor</span></div>
+    <div class="tile"><span class="n">02</span><span class="t">Adoração</span></div>
+    <div class="tile"><span class="n">03</span><span class="t">Palavra</span></div>
+    <div class="tile"><span class="n">04</span><span class="t">Relacionamento</span></div>
+  </div>
+  <div class="slab-foot"><span>Behold Movement</span><span>05</span></div>
+</section>
+
+<!-- 06 É UM MOVIMENTO -->
+<section class="slab s-ink">
+  <p class="eyebrow">O Behold</p>
+  <ul class="struck">
+    <li>Não é um evento.</li>
+    <li>Não é uma programação.</li>
+    <li>Não é uma campanha.</li>
+    <li>Não é um culto especial.</li>
+  </ul>
+  <h2 class="d d-xl c-sky">É um movimento.</h2>
+  <div class="slab-foot"><span>Behold Movement</span><span>06</span></div>
+</section>
+
+<!-- 07 DIA 31 -->
+<section class="slab s-blue">
+  <p class="eyebrow">Dia 31</p>
+  <h2 class="d d-xl c-ink">O dia 31 é<br>apenas <span class="c-paper">o começo.</span></h2>
+  <div class="slab-foot"><span>Behold Movement</span><span>07</span></div>
+</section>
+
+<!-- 08 VISÃO -->
+<section class="slab s-paper">
+  <p class="eyebrow">Nossa visão</p>
+  <h2 class="d d-l">Do olhar<br>à transformação.</h2>
+  <ol class="steps">
+    <li><span class="n">01</span><span class="d d-s">Contemplar<br>Cristo</span></li>
+    <li><span class="n">02</span><span class="d d-s">Apresentar<br>Cristo</span></li>
+    <li><span class="n">03</span><span class="d d-s">Alcançar<br>pessoas</span></li>
+    <li><span class="n">04</span><span class="d d-s">Transformar<br>comunidades</span></li>
+  </ol>
+  <div class="slab-foot"><span>Behold Movement</span><span>08</span></div>
+</section>
+
+<!-- 09 CAMPO MISSIONÁRIO -->
+<section class="slab s-blue" id="campo">
+  <p class="eyebrow">Nosso campo missionário</p>
+  <div class="split">
+    <div style="display:flex;flex-direction:column;gap:clamp(28px,5vw,72px)">
+      <h2 class="d d-l">Onde Deus<br>nos enviar.</h2>
+      <ul class="cities"><li>Taboão da Serra</li><li>Embu das Artes</li><li>Itapecerica da Serra</li></ul>
+    </div>
+    <div class="map">
+      <svg viewBox="0 0 760 640" role="img" aria-label="Mapa ilustrativo de Embu das Artes, Taboão da Serra e Itapecerica da Serra">
+        <g stroke="#eceae5" stroke-width="3" stroke-linejoin="round" font-family="Anton, Impact, sans-serif" text-anchor="middle">
+          <polygon points="170,20 335,52 408,135 400,272 302,335 170,355 52,295 0,185 22,82" fill="#3b6ff5"/>
+          <polygon points="415,112 545,40 668,70 752,168 735,295 625,345 505,320 415,250" fill="#eceae5"/>
+          <polygon points="52,315 170,365 305,345 410,282 505,320 545,425 505,565 380,635 210,625 85,540 22,425" fill="#3b6ff5"/>
+          <g stroke="none" font-size="42">
+            <text x="210" y="168" fill="#eceae5">EMBU</text><text x="210" y="214" fill="#eceae5">DAS ARTES</text>
+            <text x="585" y="140" fill="#16171c">TABOÃO</text><text x="585" y="186" fill="#16171c">DA SERRA</text>
+            <text x="295" y="458" fill="#eceae5">ITAPECERICA</text><text x="295" y="504" fill="#eceae5">DA SERRA</text>
+          </g>
+          <circle cx="542" cy="250" r="14" fill="#16171c" stroke="none"/>
+        </g>
+      </svg>
+      <p class="caption">Mapa ilustrativo, fora de escala</p>
+    </div>
+  </div>
+  <div class="slab-foot"><span>Behold Movement</span><span>09</span></div>
+</section>
+
+<!-- 10 TUDO COMEÇA AQUI -->
+<section class="slab s-ink">
+  <p class="eyebrow">Taboão da Serra</p>
+  <div class="split">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <h2 class="d d-l">Tudo começa<br>aqui.</h2>
+      <p class="d d-l c-sky">Mas não<br>termina aqui.</p>
+    </div>
+    <div class="orbit">
+      <svg viewBox="0 0 640 640" role="img" aria-label="Círculos a partir da Igreja Asafe, para os bairros e as cidades">
+        <circle cx="320" cy="330" r="290" fill="none" stroke="#6e97ff" stroke-width="2.5" stroke-dasharray="6 6"/>
+        <circle cx="320" cy="330" r="200" fill="none" stroke="#6e97ff" stroke-width="2.5"/>
+        <circle cx="320" cy="330" r="115" fill="#1f5bf2" stroke="#6e97ff" stroke-width="2.5"/>
+        <circle cx="320" cy="330" r="18" fill="#eceae5"/>
+        <g font-family="'Space Mono', monospace" font-weight="700" font-size="20" text-anchor="middle">
+          <rect x="250" y="22" width="140" height="34" fill="#16171c"/><text x="320" y="46" fill="#6e97ff">CIDADES</text>
+          <rect x="255" y="112" width="130" height="34" fill="#16171c"/><text x="320" y="136" fill="#6e97ff">BAIRROS</text>
+          <text x="320" y="380" fill="#eceae5">IGREJA ASAFE</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="slab-foot"><span>Behold Movement</span><span>10</span></div>
+</section>
+
+<!-- 11 BAIRROS -->
+<section class="slab s-paper">
+  <h2 class="d d-m">Quem ainda não contemplou Cristo?</h2>
+  <ul class="hoods">
+    <li>Jardim Saporito</li><li>Jardim São Judas</li><li>Jardim Comunitário</li><li>Parque Pinheiros</li>
+    <li>Jardim Salete</li><li>Saint Moritz</li><li>Jardim Record</li><li>Jardim Clementino</li>
+  </ul>
+  <h3 class="d d-m" style="margin-top:clamp(12px,4vw,56px)">Cada ponto representa pessoas.<br>Cada pessoa representa uma história.<br><span class="c-blue">Cada história importa para Deus.</span></h3>
+  <div class="slab-foot"><span>Behold Movement</span><span>11</span></div>
+</section>
+
+<!-- 12–19 FRENTES -->
+<section class="slab s-blue" id="frentes">
+  <p class="eyebrow">Uma missão</p>
+  <h2 class="d d-xl c-ink">Seis frentes.</h2>
+  <div class="fronts" role="tablist" aria-label="Frentes do movimento">
+    <button class="front" role="tab" id="tab-0" aria-controls="front-panel" aria-selected="true" data-i="0"><span class="n">01</span><span class="t">Coordenação</span></button>
+    <button class="front" role="tab" id="tab-1" aria-controls="front-panel" aria-selected="false" data-i="1"><span class="n">02</span><span class="t">Mídia</span></button>
+    <button class="front" role="tab" id="tab-2" aria-controls="front-panel" aria-selected="false" data-i="2"><span class="n">03</span><span class="t">Comissionamento</span></button>
+    <button class="front" role="tab" id="tab-3" aria-controls="front-panel" aria-selected="false" data-i="3"><span class="n">04</span><span class="t">Ação social</span></button>
+    <button class="front" role="tab" id="tab-4" aria-controls="front-panel" aria-selected="false" data-i="4"><span class="n">05</span><span class="t">Louvor</span></button>
+    <button class="front" role="tab" id="tab-5" aria-controls="front-panel" aria-selected="false" data-i="5"><span class="n">06</span><span class="t">Suprimento</span></button>
+  </div>
+  <div class="panel" id="front-panel" role="tabpanel" aria-labelledby="tab-0"></div>
+  <div class="slab-foot"><span>Behold Movement</span><span>12 — 19</span></div>
+</section>
+
+<!-- 16 TREINAMENTO -->
+<section class="slab s-ink">
+  <p class="eyebrow">Comissionamento</p>
+  <h2 class="d d-xl c-sky">Treinamento</h2>
+  <p class="lede" style="max-width:40ch">Antes da ação teremos um treinamento especial. Uma missionária estará conosco preparando todos os participantes.</p>
+  <div class="alert">
+    <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 45 42H3Z" fill="none" stroke="#6e97ff" stroke-width="4" stroke-linejoin="round"/><path d="M24 19v11" stroke="#6e97ff" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="36" r="2.6" fill="#6e97ff"/></svg>
+    <span>Quem deseja liderar um grupo deverá participar.</span>
+  </div>
+  <p class="placeholder">[Data, horário e local do treinamento]</p>
+  <div class="slab-foot"><span>Behold Movement</span><span>16</span></div>
+</section>
+
+<!-- 20 DIA -->
+<section class="slab s-ink" id="dia31" style="padding-top:0">
+  <p class="eyebrow">Dia 31</p>
+  <h2 class="d d-l">Como será o dia?</h2>
+  <div style="overflow-x:auto">
+    <table class="agenda">
+      <tbody>
+        <tr><td class="h">12h00</td><td class="w">Encontro no Arena</td></tr>
+        <tr><td class="h">12h00 às 14h00</td><td class="w">Evangelismo</td></tr>
+        <tr><td class="h">14h00</td><td class="w">Retorno ao ponto de encontro</td></tr>
+        <tr><td class="h">14h30</td><td class="w">Almoço na ASAFE</td></tr>
+        <tr><td class="h">16h00</td><td class="w">Intercessão e oração</td></tr>
+        <tr><td class="h">17h00</td><td class="w">Preparação final</td></tr>
+        <tr class="final"><td class="h">18h00</td><td class="w">Culto Evangelístico</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slab-foot"><span>Behold Movement</span><span>20</span></div>
+</section>
+
+<!-- 21 INTERDENOMINACIONAL -->
+<section class="slab s-blue unity">
+  <p class="eyebrow">Um movimento interdenominacional</p>
+  <h2 class="d d-xl c-ink">Igrejas diferentes.<br><span class="c-paper">Uma missão.<br>Um evangelho.<br>Um reino.</span></h2>
+  <div class="slab-foot"><span>Behold Movement</span><span>21</span></div>
+</section>
+
+<!-- 22 PARTICIPAR -->
+<section class="slab s-paper" id="participar">
+  <p class="eyebrow">Seu lugar no movimento</p>
+  <h2 class="d d-l">Como você pode participar?</h2>
+  <div class="roles" id="roles">
+    <button class="role" aria-pressed="false"><span class="n">01</span><span class="t">Evangelizando</span></button>
+    <button class="role" aria-pressed="false"><span class="n">02</span><span class="t">Liderando grupos</span></button>
+    <button class="role" aria-pressed="false"><span class="n">03</span><span class="t">Mídia</span></button>
+    <button class="role" aria-pressed="false"><span class="n">04</span><span class="t">Louvor</span></button>
+    <button class="role" aria-pressed="false"><span class="n">05</span><span class="t">Suprimento</span></button>
+    <button class="role" aria-pressed="false"><span class="n">06</span><span class="t">Ação social</span></button>
+    <button class="role" aria-pressed="false"><span class="n">07</span><span class="t">Intercessão</span></button>
+    <div class="role signup"><span class="n">[Inscrição]</span><span class="t">Escolha sua frente</span></div>
+  </div>
+  <p class="picked" id="picked" aria-live="polite">Toque em uma frente para marcar onde você quer servir.</p>
+  <div class="slab-foot"><span>Behold Movement</span><span>22</span></div>
+</section>
+
+<!-- 23 IMAGINE -->
+<section class="slab s-ink">
+  <h2 class="d d-l">E se todos nós fizermos<br>a nossa parte?</h2>
+  <p class="eyebrow">Imagine</p>
+  <ul class="imagine">
+    <li>Uma família restaurada.</li>
+    <li>Um jovem encontrando propósito.</li>
+    <li>Uma criança ouvindo sobre Jesus pela primeira vez.</li>
+    <li>Uma vida sendo transformada.</li>
+  </ul>
+  <div class="slab-foot"><span>Behold Movement</span><span>23</span></div>
+</section>
+
+<!-- 24 SONHO -->
+<section class="slab s-paper">
+  <p class="eyebrow">Nosso sonho</p>
+  <ul class="struck"><li>Não é realizar um grande evento.</li></ul>
+  <h2 class="d d-l">É construir uma<br>cultura missionária.</h2>
+  <p class="d d-m c-blue">É fazer com que Cristo seja conhecido.</p>
+  <div class="slab-foot"><span>Behold Movement</span><span>24</span></div>
+</section>
+
+<!-- 25 REGIÃO -->
+<section class="slab s-blue">
+  <p class="eyebrow">Nossa região</p>
+  <div class="split">
+    <h2 class="d d-l">Ainda há<br>muito a ser<br>feito.</h2>
+    <div class="dots"><canvas id="dots" width="760" height="650" aria-label="Mapa da região com pontos representando pessoas" role="img" style="width:100%;height:auto;display:block"></canvas></div>
+  </div>
+  <div class="slab-foot"><span>Behold Movement · Contemple Cristo</span><span>25</span></div>
+</section>
+
+<!-- 26 CHAMADO -->
+<section class="slab s-ink tall">
+  <p class="eyebrow">O chamado</p>
+  <div class="push" style="display:flex;flex-direction:column;gap:24px">
+    <h2 class="d d-l">"Ide por todo o mundo e pregai o evangelho <span class="c-sky">a toda criatura."</span></h2>
+    <p class="eyebrow" style="font-size:clamp(16px,1.8vw,22px)">Marcos 16:15</p>
+  </div>
+  <div class="slab-foot"><span>Behold Movement</span><span>26</span></div>
+</section>
+
+<!-- 27 FECHAMENTO -->
+<section class="slab s-blue">
+  <div class="split">
+    <div style="display:flex;flex-direction:column;gap:clamp(32px,6vw,96px)">
+      <h2 class="d d-xl">Behold<br>Movement</h2>
+      <div>
+        <p class="d d-m c-ink">Contemple Cristo</p>
+        <p class="d d-m">e faça Cristo ser contemplado.</p>
+      </div>
+    </div>
+    <div class="poster" aria-hidden="true">
+      <span class="pm">Movement</span>
+      <span class="pb">Behold</span>
+      <span class="pf"><span>2026</span><span>CONTEMPLE CRISTO</span></span>
+    </div>
+  </div>
+  <div class="slab-foot"><span>2026</span><span>Contemple Cristo</span></div>
+</section>
+</main>
+
+<script>
+(function () {
+  // ---- Frentes (slides 13–19)
+  var F = [
+    { tag: "Frente 01 / 06", title: "Coordenação", lede: "A equipe que mantém todas as frentes caminhando juntas, na mesma direção.", label: "Responsável por", items: ["Organização", "Planejamento", "Comunicação", "Direcionamento"] },
+    { tag: "Frente 02 / 06", title: "Equipe de mídia", lede: "Quem conta a história do movimento para dentro e para fora da igreja.", label: "Responsável por", items: ["Divulgação", "Redes sociais", "Registros", "Identidade visual", "Conteúdo"] },
+    { tag: "Frente 03 / 06", title: "Comissionamento", lede: "A equipe que irá às ruas.", accent: true, label: "Objetivos", items: ["Evangelizar", "Ouvir", "Orar", "Convidar", "Acolher"] },
+    { tag: "Frente 04 / 06", title: "Ação social", lede: "O Evangelho também alcança necessidades reais.", accent: true, sub: "Quando uma vulnerabilidade for identificada:", label: "", num: true, items: ["O caso será registrado.", "Encaminhado à equipe social.", "Avaliado por assistentes sociais.", "Acompanhado com responsabilidade."] },
+    { tag: "Frente 05 / 06", title: "Louvor e culto", lede: "Às 18h teremos um culto evangelístico.", big: "18H", label: "No culto", items: ["Louvor", "Adoração", "Palavra", "Oração", "Ministração"] },
+    { tag: "Frente 06 / 06", title: "Suprimento", lede: "Uma equipe servindo quem está servindo.", accent: true, label: "Responsável por", items: ["Alimentação", "Água", "Apoio logístico", "Estrutura"] }
+  ];
+  var panel = document.getElementById("front-panel");
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".front"));
+  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function render(i) {
+    var f = F[i];
+    var list = f.items.map(function (t, k) {
+      return "<li>" + (f.num ? '<span class="k">0' + (k + 1) + "</span>" : "") + "<span>" + esc(t) + "</span></li>";
+    }).join("");
+    panel.innerHTML =
+      '<div class="split">' +
+        '<div style="display:flex;flex-direction:column;gap:20px">' +
+          '<p class="eyebrow">' + esc(f.tag) + "</p>" +
+          '<h3 class="d d-m">' + esc(f.title) + "</h3>" +
+          '<p class="lede' + (f.accent ? " accent" : "") + '">' + esc(f.lede) + "</p>" +
+          (f.sub ? '<p class="lede">' + esc(f.sub) + "</p>" : "") +
+          (f.big ? '<div class="big">' + esc(f.big) + "</div>" : "") +
+        "</div>" +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+          (f.label ? '<p class="eyebrow">' + esc(f.label) + "</p>" : "") +
+          '<ul class="checks' + (f.num ? " num" : "") + '">' + list + "</ul>" +
+        "</div>" +
+      "</div>";
+    panel.setAttribute("aria-labelledby", "tab-" + i);
+    tabs.forEach(function (t, k) { t.setAttribute("aria-selected", k === i ? "true" : "false"); t.tabIndex = k === i ? 0 : -1; });
+  }
+  tabs.forEach(function (t, k) {
+    t.addEventListener("click", function () { render(k); });
+    t.addEventListener("keydown", function (e) {
+      var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!d) return;
+      e.preventDefault();
+      var n = (k + d + tabs.length) % tabs.length;
+      render(n); tabs[n].focus();
+    });
+  });
+  render(0);
+
+  // ---- Participar (slide 22) — escolha local, sem envio
+  var picked = document.getElementById("picked");
+  var roles = Array.prototype.slice.call(document.querySelectorAll(".role[aria-pressed]"));
+  function sync() {
+    var on = roles.filter(function (r) { return r.getAttribute("aria-pressed") === "true"; })
+      .map(function (r) { return r.querySelector(".t").textContent; });
+    picked.textContent = on.length ? "Você marcou: " + on.join(" · ") + ". A inscrição oficial será divulgada pela coordenação." : "Toque em uma frente para marcar onde você quer servir.";
+    try { localStorage.setItem("behold-roles", JSON.stringify(on)); } catch (e) {}
+  }
+  try {
+    var saved = JSON.parse(localStorage.getItem("behold-roles") || "[]");
+    roles.forEach(function (r) { if (saved.indexOf(r.querySelector(".t").textContent) > -1) r.setAttribute("aria-pressed", "true"); });
+  } catch (e) {}
+  roles.forEach(function (r) {
+    r.addEventListener("click", function () { r.setAttribute("aria-pressed", r.getAttribute("aria-pressed") === "true" ? "false" : "true"); sync(); });
+  });
+  sync();
+
+  // ---- Região com pontos (slide 25)
+  var cv = document.getElementById("dots");
+  var ctx = cv.getContext("2d");
+  var shapes = [
+    [[30,85],[220,0],[430,40],[520,145],[512,325],[395,405],[220,430],[75,350],[0,220]],
+    [[565,125],[715,45],[875,75],[935,195],[915,355],[790,425],[625,385],[565,300]],
+    [[75,375],[220,440],[395,430],[530,335],[655,395],[705,530],[655,700],[480,800],[270,790],[110,690],[30,540]]
+  ];
+  var S = 760 / 940;
+  function inside(p, poly) {
+    var c = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var a = poly[i], b = poly[j];
+      if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c;
+    }
+    return c;
+  }
+  var seed = 31;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var pts = [];
+  shapes.forEach(function (poly) {
+    var tries = 0, want = poly.length > 9 ? 30 : poly.length > 8 ? 22 : 14, got = 0;
+    while (got < want && tries < 4000) {
+      tries++;
+      var p = [rnd() * 940, rnd() * 800];
+      if (!inside(p, poly)) continue;
+      if (pts.some(function (q) { return Math.hypot(q[0] - p[0], q[1] - p[1]) < 62; })) continue;
+      pts.push(p); got++;
+    }
+  });
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function draw(t) {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.save(); ctx.scale(S, S);
+    shapes.forEach(function (poly) {
+      ctx.beginPath(); poly.forEach(function (p, i) { i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }); ctx.closePath();
+      ctx.fillStyle = "#3b6ff5"; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = "#eceae5"; ctx.stroke();
+    });
+    pts.forEach(function (p, i) {
+      var r = 11 + (reduce ? 0 : Math.sin(t / 700 + i * 1.7) * 1.6);
+      ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fillStyle = "#16171c"; ctx.fill();
+    });
+    ctx.restore();
+    if (!reduce) requestAnimationFrame(draw);
+  }
+  draw(0);
+})();
+</script>
