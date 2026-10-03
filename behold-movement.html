@@ -174,6 +174,34 @@ a { color: inherit; }
 .role.signup .n { color: var(--paper); font-weight: 400; }
 @media (max-width: 900px) { .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .picked { font-family: var(--mono); font-size: 14px; margin: 0; min-height: 1.5em; color: var(--mute-ink); }
+a.role.signup { cursor: pointer; text-decoration: none; }
+a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-soft); }
+
+/* ---------- signup form ---------- */
+.signup-form { background: var(--ink); color: var(--paper); border-radius: 6px; padding: clamp(24px, 4vw, 56px); display: flex; flex-direction: column; gap: clamp(24px, 3vw, 36px); scroll-margin-top: 80px; }
+.sf-head { display: flex; flex-direction: column; gap: 12px; }
+.signup-form .eyebrow { color: var(--sky); }
+.sf-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; }
+.sf-grid .wide { grid-column: 1 / -1; }
+@media (max-width: 700px) { .sf-grid { grid-template-columns: minmax(0, 1fr); } }
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.field label { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--mute); }
+.field input, .field select { font: 600 19px/1.3 var(--body); color: var(--paper); background: transparent; border: 0; border-bottom: 2px solid #3a3d47; border-radius: 0; padding: 10px 0 12px; width: 100%; transition: border-color .15s; }
+.field select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--sky) 50%), linear-gradient(135deg, var(--sky) 50%, transparent 50%); background-position: calc(100% - 14px) 52%, calc(100% - 8px) 52%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 28px; }
+.field select:invalid { color: #5b5f6a; font-weight: 400; }
+.field select option { background: var(--ink); color: var(--paper); }
+.field input::placeholder { color: #5b5f6a; font-weight: 400; }
+.field input:focus, .field select:focus { outline: none; border-color: var(--sky); }
+.field.invalid input, .field.invalid select { border-color: #ff7a6b; }
+.field .err { font-family: var(--mono); font-size: 12.5px; color: #ff9a8d; margin: 0; }
+.sf-foot { display: flex; align-items: center; gap: 20px 28px; flex-wrap: wrap; }
+.sf-send { font: 400 clamp(22px, 2.4vw, 30px)/1 var(--display); text-transform: uppercase; letter-spacing: .02em; color: var(--paper); background: var(--blue); border: 0; border-radius: 4px; padding: 18px 28px 16px; cursor: pointer; transition: background .15s; }
+.sf-send:hover { background: var(--blue-soft); }
+.sf-send:focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; }
+.sf-send[disabled] { opacity: .6; cursor: progress; }
+.sf-status { font-family: var(--mono); font-size: 14px; margin: 0; flex: 1 1 260px; min-width: 0; color: var(--mute); }
+.sf-status.ok { color: var(--sky); }
+.sf-status.bad { color: #ff9a8d; }
 
 /* ---------- imagine ---------- */
 .imagine { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
@@ -420,9 +448,57 @@ a { color: inherit; }
     <button class="role" aria-pressed="false"><span class="n">05</span><span class="t">Suprimento</span></button>
     <button class="role" aria-pressed="false"><span class="n">06</span><span class="t">Ação social</span></button>
     <button class="role" aria-pressed="false"><span class="n">07</span><span class="t">Intercessão</span></button>
-    <div class="role signup"><span class="n">[Inscrição]</span><span class="t">Escolha sua frente</span></div>
+    <a class="role signup" href="#inscricao"><span class="n">[Inscrição]</span><span class="t">Escolha sua frente</span></a>
   </div>
-  <p class="picked" id="picked" aria-live="polite">Toque em uma frente para marcar onde você quer servir.</p>
+  <p class="picked" id="picked" aria-live="polite">Toque em uma frente para escolher onde você quer servir.</p>
+
+  <!--
+    Inscrição: envia os dados para o webhook definido em data-webhook
+    (n8n, Make, Zapier, Google Apps Script…), como formulário
+    application/x-www-form-urlencoded. O webhook precisa responder com
+    Access-Control-Allow-Origin para o navegador confirmar o envio.
+  -->
+  <form class="signup-form" id="inscricao" data-webhook="" novalidate>
+    <div class="sf-head">
+      <p class="eyebrow">Inscrição · Dia 31</p>
+      <h3 class="d d-m">Faça parte do movimento.</h3>
+    </div>
+    <div class="sf-grid">
+      <div class="field">
+        <label for="f-nome">Nome</label>
+        <input id="f-nome" name="nome" type="text" autocomplete="name" required maxlength="120" placeholder="Seu nome completo">
+      </div>
+      <div class="field">
+        <label for="f-telefone">Telefone</label>
+        <input id="f-telefone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 90000-0000" maxlength="16">
+      </div>
+      <div class="field wide">
+        <label for="f-endereco">Endereço</label>
+        <input id="f-endereco" name="endereco" type="text" autocomplete="street-address" required maxlength="200" placeholder="Rua, número, bairro, cidade">
+      </div>
+      <div class="field">
+        <label for="f-igreja">Igreja onde congrega</label>
+        <input id="f-igreja" name="igreja" type="text" required maxlength="120" placeholder="Nome da sua igreja">
+      </div>
+      <div class="field">
+        <label for="f-ministerio">Ministério de atuação</label>
+        <select id="f-ministerio" name="ministerio" required>
+          <option value="">Selecione uma frente</option>
+          <option>Evangelizando</option>
+          <option>Liderando grupos</option>
+          <option>Mídia</option>
+          <option>Louvor</option>
+          <option>Suprimento</option>
+          <option>Ação social</option>
+          <option>Intercessão</option>
+        </select>
+      </div>
+    </div>
+    <div class="sf-foot">
+      <button type="submit" class="sf-send" id="f-send">Enviar inscrição</button>
+      <p class="sf-status" id="f-status" role="status" aria-live="polite"></p>
+    </div>
+  </form>
   <div class="slab-foot"><span>Behold Movement</span><span>22</span></div>
 </section>
 
@@ -536,23 +612,97 @@ a { color: inherit; }
   });
   render(0);
 
-  // ---- Participar (slide 22) — escolha local, sem envio
+  // ---- Participar (slide 22) — cartões e campo "Ministério de atuação" ficam sincronizados
   var picked = document.getElementById("picked");
   var roles = Array.prototype.slice.call(document.querySelectorAll(".role[aria-pressed]"));
-  function sync() {
-    var on = roles.filter(function (r) { return r.getAttribute("aria-pressed") === "true"; })
-      .map(function (r) { return r.querySelector(".t").textContent; });
-    picked.textContent = on.length ? "Você marcou: " + on.join(" · ") + ". A inscrição oficial será divulgada pela coordenação." : "Toque em uma frente para marcar onde você quer servir.";
-    try { localStorage.setItem("behold-roles", JSON.stringify(on)); } catch (e) {}
+  var form = document.getElementById("inscricao");
+  var min = document.getElementById("f-ministerio");
+  function choose(name) {
+    roles.forEach(function (r) { r.setAttribute("aria-pressed", r.querySelector(".t").textContent === name ? "true" : "false"); });
+    if (min.value !== name) min.value = name;
+    picked.textContent = name ? "Sua frente: " + name + ". Complete a inscrição abaixo." : "Toque em uma frente para escolher onde você quer servir.";
   }
-  try {
-    var saved = JSON.parse(localStorage.getItem("behold-roles") || "[]");
-    roles.forEach(function (r) { if (saved.indexOf(r.querySelector(".t").textContent) > -1) r.setAttribute("aria-pressed", "true"); });
-  } catch (e) {}
   roles.forEach(function (r) {
-    r.addEventListener("click", function () { r.setAttribute("aria-pressed", r.getAttribute("aria-pressed") === "true" ? "false" : "true"); sync(); });
+    r.addEventListener("click", function () {
+      var name = r.querySelector(".t").textContent;
+      choose(r.getAttribute("aria-pressed") === "true" ? "" : name);
+      if (min.value) clearErr(min);
+    });
   });
-  sync();
+  min.addEventListener("change", function () { choose(min.value); clearErr(min); });
+
+  // ---- Inscrição via webhook
+  var tel = document.getElementById("f-telefone");
+  var send = document.getElementById("f-send");
+  var status = document.getElementById("f-status");
+  tel.addEventListener("input", function () {
+    var d = tel.value.replace(/\D/g, "").slice(0, 11);
+    var out = d;
+    if (d.length > 2) out = "(" + d.slice(0, 2) + ") " + d.slice(2);
+    if (d.length > 7) out = "(" + d.slice(0, 2) + ") " + d.slice(2, d.length - 4) + "-" + d.slice(-4);
+    tel.value = out;
+  });
+
+  var MSG = {
+    nome: "Informe seu nome.",
+    telefone: "Informe um telefone com DDD, por exemplo (11) 91234-5678.",
+    endereco: "Informe seu endereço.",
+    igreja: "Informe a igreja onde você congrega.",
+    ministerio: "Escolha um ministério de atuação."
+  };
+  function fieldOf(el) { return el.closest(".field"); }
+  function clearErr(el) {
+    var f = fieldOf(el); f.classList.remove("invalid"); el.removeAttribute("aria-invalid");
+    var e = f.querySelector(".err"); if (e) e.remove();
+  }
+  function setErr(el, msg) {
+    clearErr(el);
+    var f = fieldOf(el); f.classList.add("invalid"); el.setAttribute("aria-invalid", "true");
+    var p = document.createElement("p"); p.className = "err"; p.id = el.id + "-err"; p.textContent = msg;
+    el.setAttribute("aria-describedby", p.id); f.appendChild(p);
+  }
+  function valid(el) {
+    var v = el.value.trim();
+    if (el.name === "telefone") return v.replace(/\D/g, "").length >= 10;
+    if (el.name === "nome") return v.length >= 3;
+    return v.length > 0;
+  }
+  Array.prototype.forEach.call(form.elements, function (el) {
+    if (!el.name) return;
+    el.addEventListener("blur", function () { if (el.value && !valid(el)) setErr(el, MSG[el.name]); });
+    el.addEventListener("input", function () { if (valid(el)) clearErr(el); });
+  });
+  function say(text, kind) { status.textContent = text; status.className = "sf-status" + (kind ? " " + kind : ""); }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var first = null;
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name) return;
+      if (valid(el)) clearErr(el); else { setErr(el, MSG[el.name]); first = first || el; }
+    });
+    if (first) { first.focus(); say("Confira os campos destacados.", "bad"); return; }
+
+    var url = (form.getAttribute("data-webhook") || "").trim();
+    if (!url) { say("As inscrições ainda não estão abertas. O link de envio será configurado pela coordenação.", "bad"); return; }
+
+    var body = new URLSearchParams();
+    ["nome", "telefone", "endereco", "igreja", "ministerio"].forEach(function (k) { body.append(k, form.elements[k].value.trim()); });
+    body.append("evento", "Behold Movement · Dia 31");
+    body.append("enviado_em", new Date().toISOString());
+
+    send.disabled = true; send.textContent = "Enviando…"; say("");
+    fetch(url, { method: "POST", body: body })
+      .then(function (res) {
+        if (!res.ok) throw new Error("status " + res.status);
+        form.reset(); choose("");
+        say("Inscrição recebida. A coordenação vai falar com você pelo telefone informado.", "ok");
+      })
+      .catch(function () {
+        say("Não conseguimos enviar sua inscrição. Verifique sua conexão e tente de novo.", "bad");
+      })
+      .then(function () { send.disabled = false; send.textContent = "Enviar inscrição"; });
+  });
 
   // ---- Região com pontos (slide 25)
   var cv = document.getElementById("dots");
