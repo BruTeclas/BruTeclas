@@ -82,7 +82,7 @@
       nome: "E-mail", icone: "fa-solid fa-envelope", grupo: "botao", cor: "#f59e0b",
       titulo: "Enviar e-mail", sub: function (l) { return l.email; },
       campos: [{ k: "email", rotulo: "E-mail", ph: "contato@exemplo.com" }],
-      href: function (l) { return l.email ? "mailto:" + l.email.trim() : ""; }
+      href: function (l) { var e = String(l.email || "").trim(); return e ? "mailto:" + e : ""; }
     },
     telefone: {
       nome: "Telefone", icone: "fa-solid fa-phone", grupo: "botao", cor: "#3b82f6",
@@ -271,15 +271,24 @@
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+  // Recusa endereços que são só o começo ("mailto:", "tel:+", "https://").
+  function hrefCompleto(h) {
+    if (/^mailto:/i.test(h)) return /^mailto:[^\s@]+@[^\s@]+$/i.test(h);
+    if (/^tel:/i.test(h)) return /\d/.test(h);
+    return /^https?:\/\/[^\/\s?#.]+\.[^\/\s?#]+/i.test(h);
+  }
   // O que o link faz na página, ou null se estiver incompleto (e não aparece).
   function resolverLink(l) {
     var t = l && TIPOS[l.tipo];
     if (!t) return null;
     var href = t.href ? urlSegura(t.href(l)) : "";
+    if (href && !hrefCompleto(href)) href = "";
     var acao = t.acao ? t.acao(l) : null;
     return href || acao ? { tipo: t, href: href, acao: acao || null } : null;
   }
-  function tituloLink(l, t) { return (l.tipo === "link" ? l.titulo : l.rotulo) || t.titulo || t.nome; }
+  function tituloLink(l, t) {
+    return String((l.tipo === "link" ? l.titulo : l.rotulo) || "").trim() || t.titulo || t.nome;
+  }
 
   function render(alvo, d, opcoes) {
     d = d || {};

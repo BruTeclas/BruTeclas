@@ -545,10 +545,11 @@
         var campos = t.campos.slice();
         if (l.tipo !== "link") campos.push({ k: "rotulo", rotulo: "Texto do botão (opcional)", ph: t.titulo || t.nome });
         var item = el("div", { class: "link-item" });
-        var seloDestaque = el("span", { class: "link-destaque", title: "Aparece como ícone abaixo da descrição" }, [icone("fa-solid fa-star"), " Destaque"]);
+        var seloDestaque = el("span", { class: "link-destaque", title: "Aparece como ícone abaixo da descrição" }, [icone("fa-solid fa-star"), el("span", { class: "link-destaque-texto", text: "Destaque" })]);
 
         var ic = el("span", { class: "link-ic" }, [icone(l.tipo === "link" && l.icone ? l.icone : t.icone)]);
         if (t.cor) ic.style.background = t.cor;
+        if (t.corIcone) ic.style.color = t.corIcone;
         var corpo = el("div", { class: "link-corpo" });
         campos.forEach(function (c, ci) {
           if (c.tipo === "icone") {
@@ -565,7 +566,8 @@
 
         item.appendChild(el("div", { class: "link-cab" }, [
           ic,
-          el("span", { class: "link-nome" }, [t.nome, seloDestaque]),
+          el("span", { class: "link-nome", text: t.nome }),
+          seloDestaque,
           el("button", { class: "btn fantasma icone", type: "button", title: "Subir", "aria-label": "Subir", disabled: i === 0 ? "" : null, onclick: function () { mover(i, -1); } }, [icone("fa-solid fa-arrow-up")]),
           el("button", { class: "btn fantasma icone", type: "button", title: "Descer", "aria-label": "Descer", disabled: i === d.links.length - 1 ? "" : null, onclick: function () { mover(i, 1); } }, [icone("fa-solid fa-arrow-down")]),
           el("button", { class: "btn fantasma icone perigo-leve", type: "button", title: "Remover", "aria-label": "Remover", onclick: function () {
