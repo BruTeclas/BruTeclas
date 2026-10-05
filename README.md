@@ -41,45 +41,75 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
   - **Link personalizado**, com ícone à sua escolha.
   - **16 redes sociais:** Instagram, TikTok, Facebook, YouTube, LinkedIn, X, Threads, Kwai e outras.
 - Botões "Salvar contato" e "Compartilhar".
-- **Dados internos** (só você vê): nome e contato do cliente, data de vencimento e observações. Perfis vencidos ficam destacados e têm um filtro próprio.
+- **Cliente e cobrança** (só você vê): cliente ligado ao perfil, data de vencimento e observações. Perfis vencidos ficam destacados e têm um filtro próprio.
+
+### Clientes
+
+Cada cliente tem um cadastro próprio, separado da página. Um cliente pode ter vários perfis.
+
+- **Dados:** pessoa física ou jurídica, nome, CPF/CNPJ (com verificação dos dígitos e sem repetição), data de nascimento ou fundação.
+- **Contato:** WhatsApp, telefone e e-mail.
+- **Endereço:** o CEP preenche rua, bairro, cidade e UF.
+- **Redes sociais e site.**
+- **Plano, valor e observações.**
+
+Ao criar um perfil para um cliente, a página já nasce com os contatos do cadastro: WhatsApp, e-mail, redes, site e mapa do endereço. No editor, o botão **"Trazer contatos do cadastro"** completa o que faltar.
+
+### Acesso ao painel
+
+- **Login** só para administradores, com mensagens claras para senha errada, e-mail não confirmado e excesso de tentativas.
+- **"Esqueci minha senha"** envia um link por e-mail. A página `admin/redefinir-senha.html` cria a nova senha: mínimo de 8 caracteres, com letras e números.
+- **"Minha conta"** troca a senha. A senha atual é conferida antes, e os outros aparelhos são desconectados.
 - QR Code do perfil para imprimir no verso do chaveiro.
 
-## Testar agora (modo demonstração)
-
-Sem nada configurado, o painel funciona em **modo demonstração**: os dados ficam salvos só no seu navegador.
+## Testar no computador
 
 ```bash
-npx serve .          # ou: python3 -m http.server
+npx serve .          # ou: python3 -m http.server 3000
 ```
-Abra `http://localhost:3000/admin`, entre com qualquer e-mail e senha e crie um perfil.
-Para ver a página pública localmente, use `http://localhost:3000/perfil.html?p=<link>`.
+Abra `http://localhost:3000/admin`. Para ver uma página de perfil, use `http://localhost:3000/perfil.html?p=<link>`.
 
-## Colocar no ar (passo a passo, ~20 min)
+Com `supabaseUrl` vazio em `js/config.js`, o painel roda em **modo demonstração**: os dados ficam só no navegador e qualquer e-mail e senha entram.
 
-### 1. Supabase (banco de dados)
-1. Crie uma conta em [supabase.com](https://supabase.com) → **New project** (região *South America (São Paulo)*).
-2. **SQL Editor** → New query → cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) → **Run**.
-3. **Authentication → Users → Add user**: crie o seu usuário (e-mail e senha) e marque *Auto Confirm User*.
-4. Volte ao **SQL Editor** e rode, com o seu e-mail:
-   ```sql
-   insert into public.admins (user_id)
-     select id from auth.users where email = 'SEU_EMAIL_AQUI';
-   ```
-5. **Authentication → Sign In / Providers → Email**: **desative "Allow new users to sign up"**.
-   Assim ninguém consegue criar conta. Só entra quem você cadastrar.
-6. **Project Settings → API**: copie a *Project URL* e a *anon public key*.
+## Supabase: o que já está pronto
 
-### 2. Configurar o site
-Edite [`js/config.js`](js/config.js):
-```js
-supabaseUrl: "https://xxxx.supabase.co",
-supabaseAnonKey: "eyJ...",
-dominio: "https://bruteclas.com.br",
-```
-> A *anon key* é pública por natureza; quem protege os dados são as regras do banco.
-> **Nunca** coloque a *service_role key* no site.
+O projeto **NFC Ambiente** já está configurado:
 
-### 3. Hospedar (Netlify ou Vercel, grátis)
+- **Banco:** tabelas `admins`, `admins_autorizados`, `clientes` e `perfis`, a função `perfil_publico` e o bucket `imagens`. O conteúdo está em [`supabase/schema.sql`](supabase/schema.sql).
+- **Regras de acesso testadas no banco real:**
+  - visitante só vê um perfil no ar, pelo link exato;
+  - usuário logado que não é administrador não vê nada;
+  - administrador vê e grava tudo.
+- **E-mail autorizado como administrador:** `bru.teclas@gmail.com`. A conta com esse e-mail vira administradora sozinha quando é criada e confirmada.
+- **`js/config.js`** já aponta para o projeto, com a chave **pública** (publishable).
+
+## Supabase: o que falta (só no painel do Supabase, ~10 min)
+
+Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com/dashboard](https://supabase.com/dashboard), no projeto **NFC Ambiente**:
+
+1. **Authentication → URL Configuration**
+   - **Site URL:** o endereço do site, por exemplo `https://bruteclas.com.br`. Enquanto testa no computador, use `http://localhost:3000`.
+   - **Redirect URLs:** adicione `https://bruteclas.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
+2. **Authentication → Sign In / Providers → Email**
+   - Desligue **"Allow new users to sign up"**. Ninguém cria conta sozinho; só entra quem você cadastrar.
+   - Mantenha **"Confirm email"** ligado.
+   - Em **"Minimum password length"**, coloque `8`. Em **"Password requirements"**, escolha letras e números.
+3. **Authentication → Emails → Templates.** Para cada modelo, copie o assunto, que está na 1ª linha do arquivo, e cole o conteúdo do arquivo:
+
+   | Modelo | Arquivo |
+   |---|---|
+   | Reset password | `supabase/templates/recuperar-senha.html` |
+   | Invite user | `supabase/templates/convite.html` |
+   | Password changed (em *Security notifications*: ligue e cole) | `supabase/templates/senha-alterada.html` |
+
+   Esses modelos levam para `admin/redefinir-senha.html`. O código do link só é usado quando você clica em "Salvar senha", então antivírus de e-mail que abrem links antes de você não o invalidam.
+4. **Crie o seu acesso:** **Authentication → Users → Add user → Create new user**, com `bru.teclas@gmail.com`, uma senha forte e **"Auto Confirm User"** marcado. A conta vira administradora sozinha.
+   Depois que o site estiver no ar, você também pode usar **"Send invitation"**: chega um e-mail para criar a senha.
+5. **E-mail de verdade (recomendado):** o envio padrão do Supabase só entrega para e-mails da equipe do projeto e tem limite por hora. Para você, isso basta. Para mais administradores, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**, por exemplo [Resend](https://resend.com) ou [Brevo](https://www.brevo.com), com remetente como `nao-responda@bruteclas.com.br`.
+
+**Outro administrador:** no **SQL Editor**, rode `insert into public.admins_autorizados (email) values ('email@exemplo.com');` e depois convide o e-mail em **Users → Invite user**.
+
+## Hospedar (Netlify ou Vercel, grátis)
 - **Netlify:** *Add new site → Import from GitHub* → escolha este repositório → Deploy.
   O arquivo `_redirects` já faz `seudominio.com/<link>` abrir o perfil certo.
 - **Vercel:** *Add New → Project* → importe o repositório → Deploy. O `vercel.json` já faz o mesmo.
@@ -88,7 +118,7 @@ Depois, em **Domain settings**, adicione o seu domínio e siga as instruções d
 
 > GitHub Pages **não** serve aqui: ele não consegue mandar `/<link>` para a página do perfil.
 
-### 4. Gravar o chaveiro
+## Gravar o chaveiro
 1. No painel: **Ativar novo perfil** → configure → **Liberar para o cliente**.
 2. Copie o link do perfil.
 3. No app **NFC Tools** (Android ou iPhone): *Escrever → Adicionar registro → URL* → cole o link → *Escrever* → encoste o chaveiro.
@@ -104,11 +134,13 @@ index.html            Página inicial do domínio (sua vitrine; personalize)
 perfil.html           Página pública de cada perfil (/<link>)
 admin/                Painel com login
   index.html, admin.js, admin.css
-js/config.js          ← suas chaves do Supabase e o domínio
+  redefinir-senha.html  Página do link "Esqueci minha senha" e do convite
+js/config.js          Endereço do Supabase, chave pública e domínio
 js/db.js              Acesso ao banco (Supabase ou modo demonstração)
 js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
+supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
 _redirects            Rotas para o Netlify
 vercel.json           Rotas para a Vercel
 ```
@@ -116,8 +148,10 @@ vercel.json           Rotas para a Vercel
 ## Segurança
 
 - Visitantes só conseguem ler **um perfil pelo link exato** e **apenas se estiver no ar**. Não dá para listar perfis nem ver dados internos (função `perfil_publico`).
-- Criar, editar e excluir exige login **e** estar na tabela `admins`.
-- Só administradores enviam ou apagam fotos.
+- **Clientes, perfis e fotos:** criar, editar e excluir exige login **e** estar na tabela `admins`. Visitantes e usuários comuns não veem nenhum dado de cliente.
+- **Quem pode virar administrador:** a lista `admins_autorizados` só pode ser mudada pelo SQL Editor. Nem um administrador consegue alterá-la pelo site.
+- **Sessão:** o painel confere se a conta é administradora ao entrar e ao reabrir. Se não for, desconecta.
+- **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
 
 ## Próximas ideias
 
