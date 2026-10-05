@@ -57,7 +57,7 @@
         var desc = document.createElement("meta");
         desc.name = "description"; desc.content = (d.descricao || "").split("\n")[0];
         document.head.appendChild(desc);
-        Perfil.render(app, d, { urlPublica: DB.urlPerfil(slug), rodape: (window.CONFIG && CONFIG.marca) || "" });
+        Perfil.render(app, d, { urlPublica: DB.urlPerfil(slug) });
       }).catch(function () {
         aviso("fa-solid fa-wifi", "Não foi possível carregar", "Verifique sua conexão e tente novamente.");
       });

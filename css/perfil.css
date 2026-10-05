@@ -104,7 +104,10 @@ button.perfil-rede { appearance: none; -webkit-appearance: none; padding: 0; fon
 .perfil-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
 .perfil-acoes .perfil-botao { justify-content: center; font-size: .9rem; padding: 12px; gap: 8px; }
 .perfil-acoes .perfil-botao:only-child { grid-column: 1 / -1; }
-.perfil-rodape { text-align: center; color: var(--texto2); font-size: .75rem; margin-top: 30px; opacity: .8; }
+.perfil-rodape { text-align: center; color: var(--texto2); font-size: .78rem; margin-top: 30px; }
+.perfil-rodape a { color: var(--texto); font-weight: 600; text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--texto) 35%, transparent); }
+.perfil-rodape a:hover, .perfil-rodape a:focus-visible { border-bottom-color: currentColor; }
+.perfil-rodape.no-aviso { position: absolute; left: 16px; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom)); margin: 0; }
 
 .perfil-aviso { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .perfil-aviso-ic { font-size: 2.4rem; color: var(--texto2); }

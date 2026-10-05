@@ -19,5 +19,9 @@ window.CONFIG = {
   // Vazio = usa o endereço atual do navegador.
   dominio: "",           // ex.: "https://bruteclas.com.br"
 
-  marca: "BruTeclas"
+  marca: "BruTeclas",
+
+  // Crédito no rodapé de todos os perfis. O nome vira link para "url".
+  // Use credito: null para não mostrar nada.
+  credito: { texto: "Desenvolvido por", nome: "FrontIA", url: "https://frontia.com.br/" }
 };

@@ -392,7 +392,7 @@
     tPrevia = setTimeout(function () {
       if (!estado.ed) return;
       var tela = $("previaTela"), rolagem = tela.scrollTop;
-      Perfil.render(tela, estado.ed.p.dados, { urlPublica: DB.urlPerfil(estado.ed.p.slug), rodape: false });
+      Perfil.render(tela, estado.ed.p.dados, { urlPublica: DB.urlPerfil(estado.ed.p.slug) });
       tela.scrollTop = rolagem;
     }, 120);
   }

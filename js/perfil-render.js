@@ -286,6 +286,19 @@
     var acao = t.acao ? t.acao(l) : null;
     return href || acao ? { tipo: t, href: href, acao: acao || null } : null;
   }
+  // Rodapé com o crédito (configurado em js/config.js).
+  var CREDITO_PADRAO = { texto: "Desenvolvido por", nome: "FrontIA", url: "https://frontia.com.br/" };
+  function rodapeCredito(classeExtra) {
+    var cfg = window.CONFIG || {};
+    var c = "credito" in cfg ? cfg.credito : CREDITO_PADRAO;
+    if (!c || !c.nome) return null;
+    var url = urlSegura(c.url);
+    return el("footer", { class: "perfil-rodape" + (classeExtra ? " " + classeExtra : "") }, [
+      c.texto ? c.texto + " " : null,
+      url ? el("a", { href: url, target: "_blank", rel: "noopener", text: c.nome }) : el("strong", { text: c.nome })
+    ]);
+  }
+
   function tituloLink(l, t) {
     return String((l.tipo === "link" ? l.titulo : l.rotulo) || "").trim() || t.titulo || t.nome;
   }
@@ -353,7 +366,8 @@
     }
     if (acoes.children.length) main.appendChild(acoes);
 
-    if (opcoes.rodape !== false) main.appendChild(el("footer", { class: "perfil-rodape", text: opcoes.rodape || "" }));
+    var rodape = rodapeCredito();
+    if (rodape) main.appendChild(rodape);
     raiz.appendChild(main);
 
     alvo.innerHTML = "";
@@ -369,7 +383,8 @@
         el("div", { class: "perfil-aviso-ic" }, [icone(icn)]),
         el("h1", { text: titulo }),
         el("p", { class: "perfil-descricao", text: texto })
-      ])
+      ]),
+      rodapeCredito("no-aviso")
     ]));
   }
 
