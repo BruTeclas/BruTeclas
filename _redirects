@@ -1,0 +1,4 @@
+# Netlify: seudominio.com/<link-do-perfil>  ->  perfil.html
+# (arquivos e pastas que existem, como /admin, /js e /css, têm prioridade)
+/admin      /admin/index.html   200
+/:slug      /perfil.html        200

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Carregando…</title>
+  <meta name="theme-color" content="#0f0f14">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/css/perfil.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #0f0f14; }
+    #app, #app > .perfil { min-height: 100vh; }
+    .carregando { min-height: 100vh; display: grid; place-items: center; }
+    .carregando::after {
+      content: ""; width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.15); border-top-color: #fff; animation: gira .8s linear infinite;
+    }
+    @keyframes gira { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="app"><div class="carregando" aria-label="Carregando"></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/db.js"></script>
+  <script src="/js/perfil-render.js"></script>
+  <script>
+    (function () {
+      var app = document.getElementById("app");
+      // seudominio.com/joao  ->  "joao"   (ou perfil.html?p=joao para testes)
+      var slug = new URLSearchParams(location.search).get("p") ||
+                 decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, "").split("/").pop() || "");
+      if (/\.html?$/i.test(slug)) slug = "";
+
+      function aviso(icone, titulo, texto) {
+        document.title = titulo;
+        Perfil.renderAviso(app, icone, titulo, texto);
+      }
+
+      if (!/^[a-z0-9-]{1,40}$/i.test(slug)) {
+        aviso("fa-solid fa-link-slash", "Página não encontrada", "Confira o endereço e tente de novo.");
+        return;
+      }
+
+      DB.perfilPublico(slug).then(function (r) {
+        if (!r) return aviso("fa-solid fa-link-slash", "Página não encontrada", "Confira o endereço e tente de novo.");
+        if (r.status === "inativo") return aviso("fa-solid fa-circle-pause", "Perfil temporariamente indisponível", "Este perfil está fora do ar no momento.");
+        if (r.status !== "ativo") return aviso("fa-solid fa-screwdriver-wrench", "Em breve", "Este perfil está sendo configurado.");
+
+        var d = r.dados || {};
+        document.title = d.nome || "Links";
+        var desc = document.createElement("meta");
+        desc.name = "description"; desc.content = (d.descricao || "").split("\n")[0];
+        document.head.appendChild(desc);
+        Perfil.render(app, d, { urlPublica: DB.urlPerfil(slug), rodape: (window.CONFIG && CONFIG.marca) || "" });
+      }).catch(function () {
+        aviso("fa-solid fa-wifi", "Não foi possível carregar", "Verifique sua conexão e tente novamente.");
+      });
+    })();
+  </script>
+</body>
+</html>

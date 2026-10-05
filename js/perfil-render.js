@@ -1,0 +1,351 @@
+/*
+ * Desenha a página de um perfil. Usado pela página pública (perfil.html)
+ * e pela prévia ao vivo do painel (admin/).
+ *
+ * Formato de "dados" de um perfil:
+ * {
+ *   nome, descricao, foto, capa, cor, tema: "escuro" | "claro",
+ *   links: [ { id, tipo, ...campos do tipo, titulo? } ],
+ *   mostrarSalvarContato, mostrarCompartilhar
+ * }
+ */
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------------------
+  // Tipos de link. grupo "rede" = ícone redondo no topo; "botao" = botão grande.
+  // ---------------------------------------------------------------------------
+  function perfilUrl(base) {
+    return function (l) {
+      var u = String(l.usuario || "").trim();
+      if (!u) return "";
+      if (/^https?:\/\//i.test(u)) return u;
+      return base.replace("{u}", encodeURIComponent(u.replace(/^@/, "")));
+    };
+  }
+  var CAMPO_USUARIO = [{ k: "usuario", rotulo: "Usuário ou link", ph: "usuario (sem @) ou https://..." }];
+  function rede(nome, icone, base) {
+    return { nome: nome, icone: icone, grupo: "rede", campos: CAMPO_USUARIO, href: perfilUrl(base) };
+  }
+
+  var TIPOS = {
+    whatsapp: {
+      nome: "WhatsApp", icone: "fa-brands fa-whatsapp", grupo: "botao", cor: "#25d366",
+      titulo: "Chamar no WhatsApp", sub: function () { return "Resposta rápida"; },
+      campos: [
+        { k: "numero", rotulo: "Número (DDI + DDD + número)", ph: "5511999999999" },
+        { k: "mensagem", rotulo: "Mensagem pronta (opcional)", ph: "Olá! Vim pelo seu chaveiro..." }
+      ],
+      href: function (l) {
+        var n = soDigitos(l.numero);
+        if (!n) return "";
+        return "https://wa.me/" + n + (l.mensagem ? "?text=" + encodeURIComponent(l.mensagem) : "");
+      }
+    },
+    pix: {
+      nome: "Pix", icone: "fa-brands fa-pix", grupo: "botao", cor: "#32bcad",
+      titulo: "Pagar com Pix", sub: function () { return "QR Code e Copia e Cola"; },
+      campos: [
+        { k: "chave", rotulo: "Chave Pix", ph: "CPF, CNPJ, e-mail, +5511999999999 ou aleatória" },
+        { k: "nome", rotulo: "Nome do recebedor", ph: "Como está no banco" },
+        { k: "cidade", rotulo: "Cidade", ph: "Sao Paulo" },
+        { k: "valor", rotulo: "Valor fixo (opcional)", ph: "25.00" }
+      ],
+      acao: function (l) { if (l.chave) return function () { abrirPix(l); }; }
+    },
+    google_avaliar: {
+      nome: "Google – Avaliar", icone: "fa-brands fa-google", grupo: "botao", cor: "#4285f4",
+      titulo: "Avalie no Google", sub: function () { return "Sua opinião ajuda muito ⭐"; },
+      campos: [{ k: "url", rotulo: "Link de avaliação", ph: "https://g.page/r/.../review" }],
+      href: function (l) { return l.url; }
+    },
+    maps: {
+      nome: "Google Maps", icone: "fa-solid fa-location-dot", grupo: "botao", cor: "#ea4335",
+      titulo: "Como chegar", sub: function () { return "Abrir no Google Maps"; },
+      campos: [{ k: "url", rotulo: "Link do Maps", ph: "https://maps.app.goo.gl/..." }],
+      href: function (l) { return l.url; }
+    },
+    google_perfil: {
+      nome: "Google – Perfil da Empresa", icone: "fa-brands fa-google", grupo: "botao", cor: "#4285f4",
+      titulo: "Perfil no Google", sub: function () { return "Horários, fotos e mais"; },
+      campos: [{ k: "url", rotulo: "Link do perfil", ph: "https://..." }],
+      href: function (l) { return l.url; }
+    },
+    email: {
+      nome: "E-mail", icone: "fa-solid fa-envelope", grupo: "botao", cor: "#f59e0b",
+      titulo: "Enviar e-mail", sub: function (l) { return l.email; },
+      campos: [{ k: "email", rotulo: "E-mail", ph: "contato@exemplo.com" }],
+      href: function (l) { return l.email ? "mailto:" + l.email.trim() : ""; }
+    },
+    telefone: {
+      nome: "Telefone", icone: "fa-solid fa-phone", grupo: "botao", cor: "#3b82f6",
+      titulo: "Ligar", sub: function (l) { return l.numero; },
+      campos: [{ k: "numero", rotulo: "Telefone", ph: "+55 11 99999-9999" }],
+      href: function (l) { var n = String(l.numero || "").replace(/[^\d+]/g, ""); return n ? "tel:" + n : ""; }
+    },
+    site: {
+      nome: "Site", icone: "fa-solid fa-globe", grupo: "botao",
+      titulo: "Site", sub: function (l) { return String(l.url || "").replace(/^https?:\/\//, ""); },
+      campos: [{ k: "url", rotulo: "Endereço", ph: "https://..." }],
+      href: function (l) { return l.url; }
+    },
+    link: {
+      nome: "Link personalizado", icone: "fa-solid fa-link", grupo: "botao",
+      titulo: "Link", sub: function (l) { return l.subtitulo || ""; },
+      campos: [
+        { k: "titulo", rotulo: "Texto do botão", ph: "Ver cardápio" },
+        { k: "subtitulo", rotulo: "Texto menor (opcional)", ph: "Atualizado toda semana" },
+        { k: "url", rotulo: "Link", ph: "https://..." },
+        { k: "icone", rotulo: "Ícone", tipo: "icone" }
+      ],
+      href: function (l) { return l.url; }
+    },
+    instagram: rede("Instagram", "fa-brands fa-instagram", "https://instagram.com/{u}"),
+    facebook:  rede("Facebook", "fa-brands fa-facebook-f", "https://facebook.com/{u}"),
+    tiktok:    rede("TikTok", "fa-brands fa-tiktok", "https://tiktok.com/@{u}"),
+    youtube:   rede("YouTube", "fa-brands fa-youtube", "https://youtube.com/@{u}"),
+    linkedin:  rede("LinkedIn", "fa-brands fa-linkedin-in", "https://linkedin.com/in/{u}"),
+    x:         rede("X (Twitter)", "fa-brands fa-x-twitter", "https://x.com/{u}"),
+    threads:   rede("Threads", "fa-brands fa-threads", "https://threads.net/@{u}"),
+    kwai:      rede("Kwai", "fa-solid fa-video", "https://kwai.com/@{u}"),
+    pinterest: rede("Pinterest", "fa-brands fa-pinterest-p", "https://pinterest.com/{u}"),
+    telegram:  rede("Telegram", "fa-brands fa-telegram", "https://t.me/{u}"),
+    spotify:   rede("Spotify", "fa-brands fa-spotify", "https://open.spotify.com/user/{u}"),
+    twitch:    rede("Twitch", "fa-brands fa-twitch", "https://twitch.tv/{u}"),
+    discord:   rede("Discord", "fa-brands fa-discord", "https://discord.gg/{u}"),
+    snapchat:  rede("Snapchat", "fa-brands fa-snapchat", "https://snapchat.com/add/{u}"),
+    behance:   rede("Behance", "fa-brands fa-behance", "https://behance.net/{u}"),
+    github:    rede("GitHub", "fa-brands fa-github", "https://github.com/{u}")
+  };
+
+  // Ícones oferecidos no "Link personalizado"
+  var ICONES = [
+    ["fa-solid fa-link", "Link"], ["fa-solid fa-book-open", "Cardápio/Catálogo"],
+    ["fa-solid fa-calendar-check", "Agenda"], ["fa-solid fa-cart-shopping", "Loja"],
+    ["fa-solid fa-tags", "Preços"], ["fa-solid fa-images", "Portfólio"],
+    ["fa-solid fa-ticket", "Cupom"], ["fa-solid fa-wifi", "Wi-Fi"],
+    ["fa-solid fa-motorcycle", "Delivery"], ["fa-solid fa-file-pdf", "PDF"],
+    ["fa-solid fa-play", "Vídeo"], ["fa-solid fa-star", "Destaque"],
+    ["fa-solid fa-heart", "Coração"], ["fa-solid fa-paw", "Pet"],
+    ["fa-solid fa-briefcase", "Trabalho"], ["fa-solid fa-gift", "Presente"]
+  ];
+
+  // ---------------------------------------------------------------------------
+  // Utilitários
+  // ---------------------------------------------------------------------------
+  function soDigitos(s) { return String(s || "").replace(/\D/g, ""); }
+  function urlSegura(u) { u = String(u || "").trim(); return /^(https?:|mailto:|tel:)/i.test(u) ? u : ""; }
+  function imgSegura(u) { u = String(u || ""); return /^(https?:|data:image\/|blob:)/i.test(u) || /^[\w./-]+$/.test(u) ? u : ""; }
+  function semAcento(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 .,\-]/g, "").trim();
+  }
+  function el(tag, attrs, filhos) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      var v = attrs[k];
+      if (v == null || v === false) return;
+      if (k === "class") e.className = v;
+      else if (k === "text") e.textContent = v;
+      else if (k.slice(0, 2) === "on") e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v);
+    });
+    (filhos || []).forEach(function (f) { if (f) e.appendChild(typeof f === "string" ? document.createTextNode(f) : f); });
+    return e;
+  }
+  function icone(c) { return el("i", { class: c, "aria-hidden": "true" }); }
+
+  function avisar(msg) {
+    var t = document.getElementById("perfilToast");
+    if (!t) { t = el("div", { id: "perfilToast", class: "perfil-toast" }); document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add("ver");
+    clearTimeout(avisar._t);
+    avisar._t = setTimeout(function () { t.classList.remove("ver"); }, 2200);
+  }
+  function copiar(texto, msg) {
+    function fallback() {
+      var a = el("textarea", { readonly: "" });
+      a.value = texto; a.style.position = "fixed"; a.style.opacity = "0";
+      document.body.appendChild(a); a.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      a.remove();
+    }
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(texto).catch(fallback);
+    else fallback();
+    avisar(msg || "Copiado!");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pix "Copia e Cola" (BR Code estático, padrão do Banco Central)
+  // ---------------------------------------------------------------------------
+  function campo(id, v) { v = String(v); return id + String(v.length).padStart(2, "0") + v; }
+  function crc16(s) {
+    var crc = 0xFFFF;
+    for (var i = 0; i < s.length; i++) {
+      crc ^= s.charCodeAt(i) << 8;
+      for (var j = 0; j < 8; j++) { crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1); crc &= 0xFFFF; }
+    }
+    return crc.toString(16).toUpperCase().padStart(4, "0");
+  }
+  // Celular deve vir com +55 (ex.: +5511999999999). 11 dígitos = CPF, 14 = CNPJ.
+  function normalizarChave(chave) {
+    chave = String(chave || "").trim();
+    if (chave.indexOf("@") < 0 && /^\+?[\d\s().\/-]{10,}$/.test(chave)) {
+      var d = soDigitos(chave);
+      if (chave.charAt(0) === "+") return "+" + d;
+      if (d.length === 11 || d.length === 14) return d;
+      return "+" + (d.indexOf("55") === 0 && d.length >= 12 ? d : "55" + d);
+    }
+    return chave;
+  }
+  function gerarPix(p) {
+    var conta = campo("00", "br.gov.bcb.pix") + campo("01", normalizarChave(p.chave));
+    var valor = Number(String(p.valor || "").replace(",", "."));
+    var payload =
+      campo("00", "01") +
+      campo("26", conta) +
+      campo("52", "0000") +
+      campo("53", "986") +
+      (valor > 0 ? campo("54", valor.toFixed(2)) : "") +
+      campo("58", "BR") +
+      campo("59", (semAcento(p.nome) || "Recebedor").slice(0, 25)) +
+      campo("60", (semAcento(p.cidade) || "Brasil").slice(0, 15)) +
+      campo("62", campo("05", "***")) +
+      "6304";
+    return payload + crc16(payload);
+  }
+
+  function abrirPix(p) {
+    var codigo = gerarPix(p);
+    var qr = el("div", { class: "perfil-qr" });
+    var fundo;
+    function fechar() { fundo.remove(); document.removeEventListener("keydown", esc); }
+    function esc(e) { if (e.key === "Escape") fechar(); }
+    fundo = el("div", { class: "perfil-modal", role: "dialog", "aria-modal": "true", onclick: function (e) { if (e.target === fundo) fechar(); } }, [
+      el("div", { class: "perfil-modal-caixa" }, [
+        el("h2", {}, [icone("fa-brands fa-pix"), " Pagar com Pix"]),
+        p.nome ? el("p", { text: "Recebedor: " + p.nome }) : null,
+        p.valor ? el("p", { text: "Valor: R$ " + Number(String(p.valor).replace(",", ".")).toFixed(2).replace(".", ",") }) : null,
+        qr,
+        el("div", { class: "perfil-chave", text: "Chave: " + p.chave }),
+        el("button", { class: "perfil-botao principal", type: "button", onclick: function () { copiar(codigo, "Pix Copia e Cola copiado! Cole no app do banco."); } },
+          [icone("fa-regular fa-copy"), " Copiar Pix Copia e Cola"]),
+        el("button", { class: "perfil-botao", type: "button", onclick: function () { copiar(p.chave, "Chave Pix copiada!"); } },
+          [icone("fa-solid fa-key"), " Copiar só a chave"]),
+        el("button", { class: "perfil-fechar", type: "button", onclick: fechar, text: "Fechar" })
+      ])
+    ]);
+    document.body.appendChild(fundo);
+    document.addEventListener("keydown", esc);
+    if (window.QRCode) new QRCode(qr, { text: codigo, width: 400, height: 400, correctLevel: QRCode.CorrectLevel.M });
+    else qr.remove();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Salvar contato (.vcf)
+  // ---------------------------------------------------------------------------
+  function salvarContato(d) {
+    function esc(s) { return String(s || "").replace(/([,;\\])/g, "\\$1").replace(/\n/g, "\\n"); }
+    var v = ["BEGIN:VCARD", "VERSION:3.0", "FN:" + esc(d.nome), "N:" + esc(d.nome) + ";;;;"];
+    (d.links || []).forEach(function (l) {
+      if (l.tipo === "telefone" && l.numero) v.push("TEL;TYPE=CELL:" + l.numero);
+      if (l.tipo === "whatsapp" && l.numero) v.push("TEL;TYPE=CELL:+" + soDigitos(l.numero));
+      if (l.tipo === "email" && l.email) v.push("EMAIL:" + l.email);
+      if (l.tipo === "site" && l.url) v.push("URL:" + l.url);
+    });
+    v.push("URL:" + location.href);
+    if (d.descricao) v.push("NOTE:" + esc(d.descricao));
+    v.push("END:VCARD");
+    var blob = new Blob([v.join("\r\n")], { type: "text/vcard;charset=utf-8" });
+    var a = el("a", { href: URL.createObjectURL(blob), download: (semAcento(d.nome) || "contato") + ".vcf" });
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+  function render(alvo, d, opcoes) {
+    d = d || {};
+    opcoes = opcoes || {};
+    var raiz = el("div", { class: "perfil" + (d.tema === "claro" ? " claro" : "") });
+    raiz.style.setProperty("--cor", d.cor || "#7c3aed");
+    var capa = imgSegura(d.capa);
+    if (capa) {
+      raiz.classList.add("com-capa");
+      raiz.appendChild(el("div", { class: "perfil-capa", style: "background-image:url(\"" + capa.replace(/"/g, "%22") + "\")" }));
+    }
+
+    var main = el("main", { class: "perfil-conteudo" });
+    var foto = imgSegura(d.foto);
+    main.appendChild(el("header", { class: "perfil-topo" }, [
+      foto ? el("img", { class: "perfil-avatar", src: foto, alt: "Foto de " + (d.nome || "") }) : null,
+      el("h1", { text: d.nome || "" }),
+      d.descricao ? el("p", { class: "perfil-descricao", text: d.descricao }) : null
+    ]));
+
+    var redes = el("nav", { class: "perfil-redes", "aria-label": "Redes sociais" });
+    var botoes = el("section", { class: "perfil-botoes" });
+
+    (d.links || []).forEach(function (l) {
+      var t = TIPOS[l.tipo];
+      if (!t) return;
+      var href = t.href ? urlSegura(t.href(l)) : "";
+      var acao = t.acao ? t.acao(l) : null;
+      if (!href && !acao) return;
+      var externo = /^https?:/i.test(href);
+
+      if (t.grupo === "rede") {
+        redes.appendChild(el("a", { class: "perfil-rede", href: href, target: "_blank", rel: "noopener", "aria-label": t.nome, title: t.nome }, [icone(t.icone)]));
+        return;
+      }
+      var titulo = (l.tipo === "link" ? l.titulo : l.rotulo) || t.titulo;
+      var sub = t.sub ? t.sub(l) : "";
+      var ic = el("span", { class: "ic" }, [icone(l.tipo === "link" && l.icone ? l.icone : t.icone)]);
+      if (t.cor) ic.style.background = t.cor;
+      var filhos = [ic, el("span", { class: "tx" }, [titulo, sub ? el("small", { text: sub }) : null]), icone("fa-solid fa-chevron-right seta")];
+      botoes.appendChild(acao
+        ? el("button", { class: "perfil-botao", type: "button", onclick: acao }, filhos)
+        : el("a", { class: "perfil-botao", href: href, target: externo ? "_blank" : null, rel: externo ? "noopener" : null }, filhos));
+    });
+    if (redes.children.length) main.appendChild(redes);
+    if (botoes.children.length) main.appendChild(botoes);
+
+    var acoes = el("section", { class: "perfil-acoes" });
+    if (d.mostrarSalvarContato !== false) {
+      acoes.appendChild(el("button", { class: "perfil-botao", type: "button", onclick: function () { salvarContato(d); } },
+        [icone("fa-solid fa-address-book"), " Salvar contato"]));
+    }
+    if (d.mostrarCompartilhar !== false) {
+      acoes.appendChild(el("button", { class: "perfil-botao", type: "button", onclick: function () {
+        var url = opcoes.urlPublica || location.href;
+        if (navigator.share) navigator.share({ title: d.nome, url: url }).catch(function () {});
+        else copiar(url, "Link copiado!");
+      } }, [icone("fa-solid fa-share-nodes"), " Compartilhar"]));
+    }
+    if (acoes.children.length) main.appendChild(acoes);
+
+    if (opcoes.rodape !== false) main.appendChild(el("footer", { class: "perfil-rodape", text: opcoes.rodape || "" }));
+    raiz.appendChild(main);
+
+    alvo.innerHTML = "";
+    alvo.appendChild(raiz);
+    return raiz;
+  }
+
+  // Tela simples para "não encontrado", "desativado" etc.
+  function renderAviso(alvo, icn, titulo, texto) {
+    alvo.innerHTML = "";
+    alvo.appendChild(el("div", { class: "perfil" }, [
+      el("main", { class: "perfil-conteudo perfil-aviso" }, [
+        el("div", { class: "perfil-aviso-ic" }, [icone(icn)]),
+        el("h1", { text: titulo }),
+        el("p", { class: "perfil-descricao", text: texto })
+      ])
+    ]));
+  }
+
+  window.Perfil = {
+    TIPOS: TIPOS, ICONES: ICONES, render: render, renderAviso: renderAviso,
+    gerarPix: gerarPix, copiar: copiar, avisar: avisar, el: el, icone: icone
+  };
+})();

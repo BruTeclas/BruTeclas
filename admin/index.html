@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel de Perfis</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="stylesheet" href="/css/perfil.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+</head>
+<body>
+  <div id="faixaDemo" class="faixa-demo" hidden>
+    <i class="fa-solid fa-flask"></i>
+    Modo demonstração: os dados ficam só neste navegador. Configure o Supabase em <code>js/config.js</code> para usar de verdade.
+  </div>
+
+  <!-- LOGIN -->
+  <section id="telaLogin" class="tela-login" hidden>
+    <form id="formLogin" class="caixa-login">
+      <div class="logo"><i class="fa-solid fa-key"></i></div>
+      <h1>Painel de Perfis</h1>
+      <p class="sub">Acesso restrito ao administrador</p>
+      <label>E-mail <input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Senha <input type="password" id="loginSenha" autocomplete="current-password" required></label>
+      <p class="erro" id="loginErro" role="alert"></p>
+      <button class="btn primario largo" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+    </form>
+  </section>
+
+  <!-- APLICAÇÃO -->
+  <div id="telaApp" hidden>
+    <header class="barra">
+      <a href="#/" class="marca"><i class="fa-solid fa-key"></i> <span id="nomeMarca">Painel</span></a>
+      <div class="barra-dir">
+        <span class="usuario" id="usuarioEmail"></span>
+        <button class="btn fantasma" id="btnSair" type="button"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
+      </div>
+    </header>
+
+    <!-- LISTA DE PERFIS -->
+    <main id="telaLista" class="conteudo" hidden>
+      <div class="titulo-linha">
+        <div>
+          <h1>Perfis</h1>
+          <p class="sub" id="resumo"></p>
+        </div>
+        <button class="btn primario" id="btnNovo" type="button"><i class="fa-solid fa-plus"></i> Ativar novo perfil</button>
+      </div>
+
+      <div class="filtros">
+        <div class="busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="busca" placeholder="Buscar por nome, cliente ou link"></div>
+        <div class="chips" id="filtroStatus" role="tablist">
+          <button class="chip ativo" data-f="todos" type="button">Todos</button>
+          <button class="chip" data-f="ativo" type="button">No ar</button>
+          <button class="chip" data-f="inativo" type="button">Desativados</button>
+          <button class="chip" data-f="rascunho" type="button">Em configuração</button>
+          <button class="chip" data-f="vencidos" type="button">Vencidos</button>
+        </div>
+      </div>
+
+      <div id="lista" class="lista"></div>
+    </main>
+
+    <!-- EDITOR -->
+    <main id="telaEditor" class="editor" hidden>
+      <div class="editor-topo">
+        <a href="#/" class="btn fantasma" id="btnVoltar"><i class="fa-solid fa-arrow-left"></i> Perfis</a>
+        <div class="editor-titulo">
+          <h1 id="edTitulo"></h1>
+          <span class="selo" id="edSelo"></span>
+        </div>
+        <div class="editor-acoes">
+          <span class="salvo" id="edSalvo"></span>
+          <button class="btn" id="btnPrevia" type="button"><i class="fa-solid fa-mobile-screen"></i> Prévia</button>
+          <button class="btn primario" id="btnSalvar" type="button"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+        </div>
+      </div>
+
+      <div class="editor-corpo">
+        <form id="formEditor" class="editor-form" autocomplete="off"></form>
+        <aside class="previa" id="previa" aria-label="Prévia">
+          <div class="previa-topo">
+            <span>Prévia</span>
+            <button class="btn fantasma pequeno" id="btnFecharPrevia" type="button"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div class="celular"><div class="celular-tela" id="previaTela"></div></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div id="modais"></div>
+  <div class="toast-admin" id="toastAdmin" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/db.js"></script>
+  <script src="/js/perfil-render.js"></script>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>
