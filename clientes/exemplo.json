@@ -1,0 +1,46 @@
+{
+  "nome": "Studio Bella Unhas",
+  "descricao": "Manicure & Nail Designer • Campinas/SP\nAtendimento com hora marcada 💅",
+  "foto": "img/avatar.svg",
+  "cor": "#e11d74",
+  "tema": "escuro",
+
+  "whatsapp": {
+    "numero": "5519999999999",
+    "mensagem": "Olá! Vim pelo chaveiro e quero agendar um horário."
+  },
+
+  "pix": {
+    "chave": "bella@exemplo.com",
+    "nome": "Bella Souza",
+    "cidade": "Campinas",
+    "valor": "",
+    "descricao": ""
+  },
+
+  "email": "bella@exemplo.com",
+  "telefone": "+5519999999999",
+  "site": "",
+
+  "google": {
+    "avaliar": "https://g.page/r/SEU_CODIGO/review",
+    "maps": "https://maps.app.goo.gl/SEU_CODIGO",
+    "perfil": ""
+  },
+
+  "redes": {
+    "instagram": "studiobella",
+    "tiktok": "studiobella",
+    "facebook": "studiobella",
+    "youtube": "",
+    "pinterest": "studiobella"
+  },
+
+  "extras": [
+    { "titulo": "Tabela de preços", "url": "https://exemplo.com/precos", "icone": "fa-solid fa-tags" },
+    { "titulo": "Agendar horário", "subtitulo": "Escolha o dia e a hora", "url": "https://exemplo.com/agenda", "icone": "fa-solid fa-calendar-check" }
+  ],
+
+  "mostrarSalvarContato": true,
+  "mostrarCompartilhar": true
+}
