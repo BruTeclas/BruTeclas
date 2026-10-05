@@ -13,8 +13,11 @@
   "use strict";
 
   // ---------------------------------------------------------------------------
-  // Tipos de link. grupo "rede" = ícone redondo no topo; "botao" = botão grande.
+  // Tipos de link. Na página, os DESTAQUES primeiros links válidos da lista viram
+  // ícones redondos abaixo da descrição; os demais viram botões, na mesma ordem.
+  // "grupo" só organiza o menu "Adicionar" do painel.
   // ---------------------------------------------------------------------------
+  var DESTAQUES = 2;
   function perfilUrl(base) {
     return function (l) {
       var u = String(l.usuario || "").trim();
@@ -24,8 +27,12 @@
     };
   }
   var CAMPO_USUARIO = [{ k: "usuario", rotulo: "Usuário ou link", ph: "usuario (sem @) ou https://..." }];
-  function rede(nome, icone, base) {
-    return { nome: nome, icone: icone, grupo: "rede", campos: CAMPO_USUARIO, href: perfilUrl(base) };
+  function rede(nome, icone, base, cor, corIcone) {
+    var href = perfilUrl(base);
+    return {
+      nome: nome, icone: icone, grupo: "rede", cor: cor, corIcone: corIcone, campos: CAMPO_USUARIO, href: href,
+      titulo: nome, sub: function (l) { return href(l).replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""); }
+    };
   }
 
   var TIPOS = {
@@ -51,7 +58,7 @@
         { k: "cidade", rotulo: "Cidade", ph: "Sao Paulo" },
         { k: "valor", rotulo: "Valor fixo (opcional)", ph: "25.00" }
       ],
-      acao: function (l) { if (l.chave) return function () { abrirPix(l); }; }
+      acao: function (l) { if (String(l.chave || "").trim()) return function () { abrirPix(l); }; }
     },
     google_avaliar: {
       nome: "Google – Avaliar", icone: "fa-brands fa-google", grupo: "botao", cor: "#4285f4",
@@ -100,22 +107,22 @@
       ],
       href: function (l) { return l.url; }
     },
-    instagram: rede("Instagram", "fa-brands fa-instagram", "https://instagram.com/{u}"),
-    facebook:  rede("Facebook", "fa-brands fa-facebook-f", "https://facebook.com/{u}"),
-    tiktok:    rede("TikTok", "fa-brands fa-tiktok", "https://tiktok.com/@{u}"),
-    youtube:   rede("YouTube", "fa-brands fa-youtube", "https://youtube.com/@{u}"),
-    linkedin:  rede("LinkedIn", "fa-brands fa-linkedin-in", "https://linkedin.com/in/{u}"),
-    x:         rede("X (Twitter)", "fa-brands fa-x-twitter", "https://x.com/{u}"),
-    threads:   rede("Threads", "fa-brands fa-threads", "https://threads.net/@{u}"),
-    kwai:      rede("Kwai", "fa-solid fa-video", "https://kwai.com/@{u}"),
-    pinterest: rede("Pinterest", "fa-brands fa-pinterest-p", "https://pinterest.com/{u}"),
-    telegram:  rede("Telegram", "fa-brands fa-telegram", "https://t.me/{u}"),
-    spotify:   rede("Spotify", "fa-brands fa-spotify", "https://open.spotify.com/user/{u}"),
-    twitch:    rede("Twitch", "fa-brands fa-twitch", "https://twitch.tv/{u}"),
-    discord:   rede("Discord", "fa-brands fa-discord", "https://discord.gg/{u}"),
-    snapchat:  rede("Snapchat", "fa-brands fa-snapchat", "https://snapchat.com/add/{u}"),
-    behance:   rede("Behance", "fa-brands fa-behance", "https://behance.net/{u}"),
-    github:    rede("GitHub", "fa-brands fa-github", "https://github.com/{u}")
+    instagram: rede("Instagram", "fa-brands fa-instagram", "https://instagram.com/{u}", "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"),
+    facebook:  rede("Facebook", "fa-brands fa-facebook-f", "https://facebook.com/{u}", "#1877f2"),
+    tiktok:    rede("TikTok", "fa-brands fa-tiktok", "https://tiktok.com/@{u}", "#111111"),
+    youtube:   rede("YouTube", "fa-brands fa-youtube", "https://youtube.com/@{u}", "#ff0000"),
+    linkedin:  rede("LinkedIn", "fa-brands fa-linkedin-in", "https://linkedin.com/in/{u}", "#0a66c2"),
+    x:         rede("X (Twitter)", "fa-brands fa-x-twitter", "https://x.com/{u}", "#111111"),
+    threads:   rede("Threads", "fa-brands fa-threads", "https://threads.net/@{u}", "#111111"),
+    kwai:      rede("Kwai", "fa-solid fa-video", "https://kwai.com/@{u}", "#ff6a00"),
+    pinterest: rede("Pinterest", "fa-brands fa-pinterest-p", "https://pinterest.com/{u}", "#e60023"),
+    telegram:  rede("Telegram", "fa-brands fa-telegram", "https://t.me/{u}", "#229ed9"),
+    spotify:   rede("Spotify", "fa-brands fa-spotify", "https://open.spotify.com/user/{u}", "#1db954"),
+    twitch:    rede("Twitch", "fa-brands fa-twitch", "https://twitch.tv/{u}", "#9146ff"),
+    discord:   rede("Discord", "fa-brands fa-discord", "https://discord.gg/{u}", "#5865f2"),
+    snapchat:  rede("Snapchat", "fa-brands fa-snapchat", "https://snapchat.com/add/{u}", "#fffc00", "#111111"),
+    behance:   rede("Behance", "fa-brands fa-behance", "https://behance.net/{u}", "#1769ff"),
+    github:    rede("GitHub", "fa-brands fa-github", "https://github.com/{u}", "#24292f")
   };
 
   // Ícones oferecidos no "Link personalizado"
@@ -264,6 +271,16 @@
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+  // O que o link faz na página, ou null se estiver incompleto (e não aparece).
+  function resolverLink(l) {
+    var t = l && TIPOS[l.tipo];
+    if (!t) return null;
+    var href = t.href ? urlSegura(t.href(l)) : "";
+    var acao = t.acao ? t.acao(l) : null;
+    return href || acao ? { tipo: t, href: href, acao: acao || null } : null;
+  }
+  function tituloLink(l, t) { return (l.tipo === "link" ? l.titulo : l.rotulo) || t.titulo || t.nome; }
+
   function render(alvo, d, opcoes) {
     d = d || {};
     opcoes = opcoes || {};
@@ -283,31 +300,34 @@
       d.descricao ? el("p", { class: "perfil-descricao", text: d.descricao }) : null
     ]));
 
-    var redes = el("nav", { class: "perfil-redes", "aria-label": "Redes sociais" });
+    var destaques = el("nav", { class: "perfil-redes", "aria-label": "Destaques" });
     var botoes = el("section", { class: "perfil-botoes" });
+    var emDestaque = 0;
 
     (d.links || []).forEach(function (l) {
-      var t = TIPOS[l.tipo];
-      if (!t) return;
-      var href = t.href ? urlSegura(t.href(l)) : "";
-      var acao = t.acao ? t.acao(l) : null;
-      if (!href && !acao) return;
+      var r = resolverLink(l);
+      if (!r) return;
+      var t = r.tipo, href = r.href, acao = r.acao;
       var externo = /^https?:/i.test(href);
+      var nomeIcone = l.tipo === "link" && l.icone ? l.icone : t.icone;
+      var titulo = tituloLink(l, t);
+      var abrir = acao ? { type: "button", onclick: acao } : { href: href, target: externo ? "_blank" : null, rel: externo ? "noopener" : null };
 
-      if (t.grupo === "rede") {
-        redes.appendChild(el("a", { class: "perfil-rede", href: href, target: "_blank", rel: "noopener", "aria-label": t.nome, title: t.nome }, [icone(t.icone)]));
+      if (emDestaque < DESTAQUES) {
+        emDestaque++;
+        destaques.appendChild(el(acao ? "button" : "a",
+          Object.assign({ class: "perfil-rede", "aria-label": titulo, title: titulo }, abrir), [icone(nomeIcone)]));
         return;
       }
-      var titulo = (l.tipo === "link" ? l.titulo : l.rotulo) || t.titulo;
       var sub = t.sub ? t.sub(l) : "";
-      var ic = el("span", { class: "ic" }, [icone(l.tipo === "link" && l.icone ? l.icone : t.icone)]);
+      var ic = el("span", { class: "ic" }, [icone(nomeIcone)]);
       if (t.cor) ic.style.background = t.cor;
-      var filhos = [ic, el("span", { class: "tx" }, [titulo, sub ? el("small", { text: sub }) : null]), icone("fa-solid fa-chevron-right seta")];
-      botoes.appendChild(acao
-        ? el("button", { class: "perfil-botao", type: "button", onclick: acao }, filhos)
-        : el("a", { class: "perfil-botao", href: href, target: externo ? "_blank" : null, rel: externo ? "noopener" : null }, filhos));
+      if (t.corIcone) ic.style.color = t.corIcone;
+      botoes.appendChild(el(acao ? "button" : "a", Object.assign({ class: "perfil-botao" }, abrir), [
+        ic, el("span", { class: "tx" }, [titulo, sub ? el("small", { text: sub }) : null]), icone("fa-solid fa-chevron-right seta")
+      ]));
     });
-    if (redes.children.length) main.appendChild(redes);
+    if (destaques.children.length) main.appendChild(destaques);
     if (botoes.children.length) main.appendChild(botoes);
 
     var acoes = el("section", { class: "perfil-acoes" });
@@ -345,7 +365,8 @@
   }
 
   window.Perfil = {
-    TIPOS: TIPOS, ICONES: ICONES, render: render, renderAviso: renderAviso,
+    TIPOS: TIPOS, ICONES: ICONES, DESTAQUES: DESTAQUES, resolverLink: resolverLink,
+    render: render, renderAviso: renderAviso,
     gerarPix: gerarPix, copiar: copiar, avisar: avisar, el: el, icone: icone
   };
 })();

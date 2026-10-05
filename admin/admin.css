@@ -192,6 +192,8 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .link-corpo .todo { grid-column: 1 / -1; }
 @media (max-width: 600px) { .link-corpo { grid-template-columns: 1fr; } }
 .link-item.incompleto .link-cab { background: var(--amarelo-claro); }
+.link-item.destaque { border-color: color-mix(in srgb, var(--primaria) 45%, var(--linha)); }
+.link-destaque { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--primaria) 12%, #fff); color: var(--primaria); font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; vertical-align: 1px; }
 
 .adicionar { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .adicionar button { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--linha); background: #fff; border-radius: 10px; cursor: pointer; font: inherit; font-size: .84rem; color: var(--texto); text-align: left; }

@@ -33,7 +33,7 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
 - Foto de perfil e foto de fundo (redimensionadas automaticamente).
 - Cor principal e tema escuro ou claro.
 - Nome e descrição.
-- Links, em qualquer ordem:
+- Links, na ordem que você quiser. **Os 2 primeiros da lista aparecem em destaque**, como ícones abaixo da descrição; os demais aparecem como botões:
   - **WhatsApp** com mensagem pronta.
   - **Pix** com QR Code e Copia e Cola.
   - **Google:** avaliar, Maps e perfil da empresa.

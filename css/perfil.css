@@ -65,6 +65,7 @@
   transition: transform .15s, background .15s, color .15s;
 }
 .perfil-rede:hover, .perfil-rede:focus-visible { transform: translateY(-3px); background: var(--cor); color: #fff; }
+button.perfil-rede { appearance: none; -webkit-appearance: none; padding: 0; font: inherit; font-size: 1.2rem; cursor: pointer; }
 
 .perfil-botoes { display: flex; flex-direction: column; gap: 12px; }
 .perfil-botao {

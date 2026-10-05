@@ -521,16 +521,31 @@
       })));
     });
 
+    // Marca itens incompletos e os que vão em destaque (mesma regra da página).
+    var itensLinks = [];
+    function atualizarEstadosLinks() {
+      var emDestaque = 0;
+      itensLinks.forEach(function (x) {
+        var valido = !!Perfil.resolverLink(x.l);
+        var destaque = valido && emDestaque < Perfil.DESTAQUES;
+        if (destaque) emDestaque++;
+        x.item.classList.toggle("incompleto", !valido);
+        x.item.classList.toggle("destaque", destaque);
+        x.selo.hidden = !destaque;
+      });
+    }
+
     function desenharLinks(focarId) {
       listaLinks.innerHTML = "";
+      itensLinks = [];
       if (!d.links.length) listaLinks.appendChild(el("div", { class: "vazio", style: "padding:24px", text: "Nenhum link ainda. Escolha abaixo o que adicionar." }));
       d.links.forEach(function (l, i) {
         var t = TIPOS[l.tipo];
         if (!t) return;
         var campos = t.campos.slice();
-        if (t.grupo === "botao" && l.tipo !== "link") campos.push({ k: "rotulo", rotulo: "Texto do botão (opcional)", ph: t.titulo });
+        if (l.tipo !== "link") campos.push({ k: "rotulo", rotulo: "Texto do botão (opcional)", ph: t.titulo || t.nome });
         var item = el("div", { class: "link-item" });
-        function checarCompleto() { item.classList.toggle("incompleto", !String(l[campos[0].k] || "").trim()); }
+        var seloDestaque = el("span", { class: "link-destaque", title: "Aparece como ícone abaixo da descrição" }, [icone("fa-solid fa-star"), " Destaque"]);
 
         var ic = el("span", { class: "link-ic" }, [icone(l.tipo === "link" && l.icone ? l.icone : t.icone)]);
         if (t.cor) ic.style.background = t.cor;
@@ -543,14 +558,14 @@
             corpo.appendChild(el("label", {}, [c.rotulo, sel]));
             return;
           }
-          var lab = campoTexto(c.rotulo, l[c.k], function (v) { l[c.k] = v; checarCompleto(); marcarSujo(); },
+          var lab = campoTexto(c.rotulo, l[c.k], function (v) { l[c.k] = v; atualizarEstadosLinks(); marcarSujo(); },
             { ph: c.ph, classe: (c.k === "mensagem" || (campos.length % 2 === 1 && ci === campos.length - 1)) ? "todo" : null });
           corpo.appendChild(lab);
         });
 
         item.appendChild(el("div", { class: "link-cab" }, [
           ic,
-          el("span", { class: "link-nome" }, [t.nome, t.grupo === "rede" ? el("small", { text: "ícone no topo" }) : null]),
+          el("span", { class: "link-nome" }, [t.nome, seloDestaque]),
           el("button", { class: "btn fantasma icone", type: "button", title: "Subir", "aria-label": "Subir", disabled: i === 0 ? "" : null, onclick: function () { mover(i, -1); } }, [icone("fa-solid fa-arrow-up")]),
           el("button", { class: "btn fantasma icone", type: "button", title: "Descer", "aria-label": "Descer", disabled: i === d.links.length - 1 ? "" : null, onclick: function () { mover(i, 1); } }, [icone("fa-solid fa-arrow-down")]),
           el("button", { class: "btn fantasma icone perigo-leve", type: "button", title: "Remover", "aria-label": "Remover", onclick: function () {
@@ -558,10 +573,11 @@
           } }, [icone("fa-solid fa-trash-can")])
         ]));
         item.appendChild(corpo);
-        checarCompleto();
+        itensLinks.push({ l: l, item: item, selo: seloDestaque });
         listaLinks.appendChild(item);
         if (l.id === focarId) setTimeout(function () { var f = corpo.querySelector("input"); if (f) { item.scrollIntoView({ behavior: "smooth", block: "center" }); f.focus({ preventScroll: true }); } }, 30);
       });
+      atualizarEstadosLinks();
     }
     function mover(i, delta) {
       var j = i + delta;
@@ -573,7 +589,7 @@
 
     form.appendChild(cartao("fa-solid fa-link", "Links", [
       listaLinks,
-      el("div", { class: "dica", style: "margin-top:10px", text: "Redes sociais aparecem como ícones no topo; o resto como botões, na ordem desta lista. Itens em amarelo estão incompletos e não aparecem." }),
+      el("div", { class: "dica", style: "margin-top:10px", text: "Os 2 primeiros links da lista aparecem em destaque, como ícones abaixo da descrição. Os demais aparecem como botões, nesta ordem. Use as setas para reordenar. Itens em amarelo estão incompletos e não aparecem." }),
       adicionar
     ]));
 
