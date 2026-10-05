@@ -107,7 +107,19 @@
     function ler() {
       var bruto = guarda.ler(CHAVE);
       if (bruto === null) { var ex = exemplosDemo(); gravar(ex); return ex; }
-      try { return JSON.parse(bruto) || []; } catch (e) { return []; }
+      var lista;
+      try { lista = JSON.parse(bruto) || []; } catch (e) { return []; }
+      // Versões antigas dos exemplos traziam uma imagem de fundo com cor fixa; sem ela,
+      // o fundo segue a cor principal.
+      var antiga = false;
+      lista.forEach(function (p) {
+        var c = p.dados && p.dados.capa;
+        if (c && c.indexOf("data:image/svg+xml,") === 0 && decodeURIComponent(c.slice(19)).indexOf('<circle cx="330" cy="90" r="190"') >= 0) {
+          p.dados.capa = ""; antiga = true;
+        }
+      });
+      if (antiga) gravar(lista);
+      return lista;
     }
     function gravar(lista) {
       try { guarda.gravar(CHAVE, JSON.stringify(lista)); }
