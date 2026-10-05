@@ -28,6 +28,18 @@
       <label>Senha <input type="password" id="loginSenha" autocomplete="current-password" required></label>
       <p class="erro" id="loginErro" role="alert"></p>
       <button class="btn primario largo" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Entrar</button>
+      <button class="link-botao" id="btnEsqueci" type="button">Esqueci minha senha</button>
+    </form>
+
+    <form id="formRecuperar" class="caixa-login" hidden>
+      <div class="logo"><i class="fa-solid fa-envelope-open-text"></i></div>
+      <h1>Recuperar senha</h1>
+      <p class="sub">Digite o e-mail de acesso. Enviaremos um link para você criar uma nova senha.</p>
+      <label>E-mail <input type="email" id="recuperarEmail" autocomplete="username" required></label>
+      <p class="erro" id="recuperarErro" role="alert"></p>
+      <p class="ok-msg" id="recuperarOk" role="status" hidden></p>
+      <button class="btn primario largo" type="submit"><i class="fa-solid fa-paper-plane"></i> Enviar link</button>
+      <button class="link-botao" id="btnVoltarLogin" type="button"><i class="fa-solid fa-arrow-left"></i> Voltar ao login</button>
     </form>
   </section>
 
@@ -35,9 +47,13 @@
   <div id="telaApp" hidden>
     <header class="barra">
       <a href="#/" class="marca"><i class="fa-solid fa-key"></i> <span id="nomeMarca">Painel</span></a>
+      <nav class="abas" aria-label="Seções">
+        <a href="#/" id="abaPerfis" class="aba"><i class="fa-solid fa-id-card"></i> Perfis</a>
+        <a href="#/clientes" id="abaClientes" class="aba"><i class="fa-solid fa-users"></i> Clientes</a>
+      </nav>
       <div class="barra-dir">
-        <span class="usuario" id="usuarioEmail"></span>
-        <button class="btn fantasma" id="btnSair" type="button"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</button>
+        <button class="btn fantasma" id="btnConta" type="button" title="Minha conta"><i class="fa-solid fa-circle-user"></i> <span class="usuario" id="usuarioEmail"></span></button>
+        <button class="btn fantasma" id="btnSair" type="button"><i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="some-celular">Sair</span></button>
       </div>
     </header>
 
@@ -63,6 +79,34 @@
       </div>
 
       <div id="lista" class="lista"></div>
+    </main>
+
+    <!-- LISTA DE CLIENTES -->
+    <main id="telaClientes" class="conteudo" hidden>
+      <div class="titulo-linha">
+        <div>
+          <h1>Clientes</h1>
+          <p class="sub" id="resumoClientes"></p>
+        </div>
+        <a class="btn primario" href="#/cliente/novo"><i class="fa-solid fa-user-plus"></i> Novo cliente</a>
+      </div>
+      <div class="filtros">
+        <div class="busca"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="buscaClientes" placeholder="Buscar por nome, CPF/CNPJ, telefone, e-mail ou cidade"></div>
+      </div>
+      <div id="listaClientes" class="lista"></div>
+    </main>
+
+    <!-- CADASTRO DE CLIENTE -->
+    <main id="telaCliente" class="conteudo estreito" hidden>
+      <div class="editor-topo">
+        <a href="#/clientes" class="btn fantasma"><i class="fa-solid fa-arrow-left"></i> Clientes</a>
+        <div class="editor-titulo"><h1 id="clTitulo"></h1></div>
+        <div class="editor-acoes">
+          <span class="salvo" id="clSalvo"></span>
+          <button class="btn primario" id="btnSalvarCliente" type="button"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+        </div>
+      </div>
+      <form id="formCliente" autocomplete="off" novalidate></form>
     </main>
 
     <!-- EDITOR -->

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <!-- O link do e-mail traz um código na URL: não repassar o endereço para outros sites -->
+  <meta name="referrer" content="no-referrer">
+  <title>Definir senha · Painel</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+</head>
+<body>
+  <section class="tela-login">
+    <form id="formSenha" class="caixa-login" novalidate>
+      <div class="logo"><i class="fa-solid fa-lock"></i></div>
+      <h1 id="titulo">Defina uma nova senha</h1>
+      <p class="sub" id="subtitulo">Escolha uma senha que você não usa em outros sites.</p>
+
+      <div id="camposSenha">
+        <label>Nova senha
+          <span class="campo-senha">
+            <input type="password" id="senha" autocomplete="new-password" required>
+            <button type="button" class="mostrar-senha" id="mostrar" aria-label="Mostrar senha"><i class="fa-regular fa-eye"></i></button>
+          </span>
+        </label>
+        <label>Repita a nova senha <input type="password" id="confirmar" autocomplete="new-password" required></label>
+        <ul class="regras-senha" id="regras"></ul>
+        <p class="erro" id="erro" role="alert"></p>
+        <button class="btn primario largo" type="submit" id="btnSalvar"><i class="fa-solid fa-check"></i> Salvar senha</button>
+      </div>
+
+      <div id="aviso" class="aviso-senha" hidden>
+        <p id="avisoTexto"></p>
+        <a class="btn primario largo" id="avisoBotao" href="/admin/"></a>
+      </div>
+    </form>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/config.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    var cfg = window.CONFIG || {};
+    var $ = function (id) { return document.getElementById(id); };
+
+    // O link pode chegar de dois jeitos:
+    //  1) ?token_hash=...&type=recovery|invite  (modelo de e-mail do projeto, à prova de pré-visualização)
+    //  2) #access_token=...&type=recovery        (modelo padrão do Supabase)
+    // ou com erro: #error_code=otp_expired
+    var qs = new URLSearchParams(location.search);
+    var hs = new URLSearchParams(location.hash.slice(1));
+    var tokenHash = qs.get("token_hash");
+    var tipo = qs.get("type") || hs.get("type") || "recovery";
+    var codigoErro = qs.get("error_code") || hs.get("error_code");
+    // Tira o código da barra de endereço e do histórico
+    if (tokenHash || codigoErro) history.replaceState(null, "", location.pathname + (tokenHash ? "?type=" + encodeURIComponent(tipo) : ""));
+
+    if (tipo === "invite") {
+      $("titulo").textContent = "Crie sua senha";
+      $("subtitulo").textContent = "Você foi convidado para o painel. Crie a senha que vai usar para entrar.";
+      document.title = "Criar senha · Painel";
+    }
+
+    function aviso(texto, botao, href) {
+      $("camposSenha").hidden = true;
+      $("aviso").hidden = false;
+      $("avisoTexto").textContent = texto;
+      $("avisoBotao").textContent = botao;
+      $("avisoBotao").href = href;
+    }
+    var LINK_INVALIDO = "Este link expirou ou já foi usado. Peça um novo em \"Esqueci minha senha\".";
+
+    // Regras da senha (as mesmas do painel)
+    function checar() {
+      var v = $("senha").value, c = $("confirmar").value, r = $("regras");
+      r.innerHTML = "";
+      [[v.length >= 8, "Pelo menos 8 caracteres"], [/[A-Za-z]/.test(v) && /\d/.test(v), "Letras e números"], [!!v && v === c, "As duas senhas iguais"]]
+        .forEach(function (x) {
+          var li = document.createElement("li");
+          if (x[0]) li.className = "ok";
+          var i = document.createElement("i");
+          i.className = x[0] ? "fa-solid fa-circle-check" : "fa-regular fa-circle";
+          li.appendChild(i);
+          li.appendChild(document.createTextNode(" " + x[1]));
+          r.appendChild(li);
+        });
+      return v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v) && v === c;
+    }
+    $("senha").addEventListener("input", checar);
+    $("confirmar").addEventListener("input", checar);
+    $("mostrar").addEventListener("click", function () {
+      var s = $("senha"), vis = s.type === "password";
+      s.type = $("confirmar").type = vis ? "text" : "password";
+      this.firstElementChild.className = vis ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+      this.setAttribute("aria-label", vis ? "Esconder senha" : "Mostrar senha");
+    });
+    checar();
+
+    if (!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase)) {
+      aviso("Esta página só funciona com o Supabase configurado (js/config.js).", "Voltar ao painel", "/admin/");
+      return;
+    }
+    if (codigoErro) { aviso(LINK_INVALIDO, "Pedir um novo link", "/admin/#esqueci"); return; }
+
+    var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+
+    // Sem código na URL, só segue se o link padrão do Supabase já abriu uma sessão de recuperação.
+    var pronto = tokenHash ? Promise.resolve(true) : new Promise(function (ok) {
+      var feito = false;
+      sb.auth.onAuthStateChange(function (evento, sessao) {
+        if (feito) return;
+        if (evento === "PASSWORD_RECOVERY" || (sessao && hs.get("access_token"))) { feito = true; ok(true); }
+      });
+      sb.auth.getSession().then(function (r) {
+        setTimeout(function () { if (!feito) { feito = true; ok(!!(r.data.session && hs.get("access_token"))); } }, 1500);
+      });
+    });
+    pronto.then(function (temSessao) {
+      if (!temSessao) aviso("Abra esta página pelo link que enviamos para o seu e-mail.", "Pedir um link", "/admin/#esqueci");
+    });
+
+    function erroAuth(e) {
+      var code = (e && e.code) || "", msg = String(e && e.message || "");
+      if (code === "weak_password") return "Senha fraca. Use pelo menos 8 caracteres, com letras e números.";
+      if (code === "same_password") return "A nova senha precisa ser diferente da anterior.";
+      if (code === "otp_expired" || /expired|invalid/i.test(msg)) return LINK_INVALIDO;
+      if (e && e.status === 429) return "Muitas tentativas. Aguarde alguns minutos.";
+      return "Não foi possível salvar a senha. Tente novamente.";
+    }
+
+    $("formSenha").addEventListener("submit", function (e) {
+      e.preventDefault();
+      $("erro").textContent = "";
+      if (!checar()) { $("erro").textContent = "A senha ainda não atende às regras acima."; $("senha").focus(); return; }
+      var btn = $("btnSalvar");
+      btn.disabled = true;
+      // O código do e-mail só é usado aqui, no clique: pré-visualizações de e-mail não o gastam.
+      var verificar = tokenHash
+        ? sb.auth.verifyOtp({ token_hash: tokenHash, type: tipo === "invite" ? "invite" : "recovery" }).then(function (r) {
+            if (r.error) throw r.error;
+            tokenHash = null;
+          })
+        : Promise.resolve();
+      verificar.then(function () {
+        return sb.auth.updateUser({ password: $("senha").value });
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        // Desconecta outros aparelhos que estivessem usando a senha antiga
+        return sb.auth.signOut({ scope: "others" }).catch(function () {});
+      }).then(function () {
+        aviso(tipo === "invite" ? "Senha criada! Você já pode entrar no painel." : "Senha alterada! Você já pode entrar no painel com a nova senha.", "Ir para o painel", "/admin/");
+      }).catch(function (err) {
+        var m = erroAuth(err);
+        if (m === LINK_INVALIDO) aviso(m, "Pedir um novo link", "/admin/#esqueci");
+        else $("erro").textContent = m;
+        btn.disabled = false;
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,19 +1,17 @@
 /*
  * CONFIGURAÇÃO DO SITE
  * ---------------------------------------------------------------------------
- * Preencha com os dados do seu projeto Supabase
- * (Supabase > Project Settings > API).
+ * Projeto Supabase: "NFC Ambiente" (Supabase > Project Settings > API).
+ * Com supabaseUrl vazio, o site roda em MODO DEMONSTRAÇÃO: tudo fica salvo
+ * só no navegador, para testar o painel.
  *
- * Enquanto supabaseUrl estiver vazio, o site roda em MODO DEMONSTRAÇÃO:
- * tudo fica salvo só no seu navegador, para você testar o painel.
- *
- * A "anon key" é pública por natureza (vai para o navegador de qualquer
- * visitante). A segurança está nas regras do banco (supabase/schema.sql).
- * NUNCA coloque aqui a "service_role key".
+ * A chave abaixo é a chave PÚBLICA (publishable). Ela vai para o navegador de
+ * qualquer visitante por natureza; quem protege os dados são as regras do banco
+ * (supabase/schema.sql). NUNCA coloque aqui a chave secreta (secret/service_role).
  */
 window.CONFIG = {
-  supabaseUrl: "",       // ex.: "https://abcdefgh.supabase.co"
-  supabaseAnonKey: "",   // ex.: "eyJhbGciOi..."
+  supabaseUrl: "https://vomhyqdvxhkovykipxpg.supabase.co",
+  supabaseAnonKey: "sb_publishable_Y47eJPltAJ5QH4j1S4ol8g_K7sWYsvs",
 
   // Endereço público do site, usado nos links e QR Codes dos perfis.
   // Vazio = usa o endereço atual do navegador.

@@ -1,4 +1,5 @@
-/* Painel administrativo: login, lista de perfis, editor, ativar/desativar/excluir. */
+/* Painel administrativo: login (com recuperação e troca de senha), perfis (lista, editor,
+   ativar/desativar/excluir) e clientes (cadastro completo, ligado aos perfis). */
 (function () {
   "use strict";
 
@@ -10,7 +11,10 @@
     perfis: [],
     filtro: "todos",
     busca: "",
-    ed: null            // { orig, p, sujo, imagensNovas: [] }
+    ed: null,           // editor de perfil: { orig, p, sujo, imagensNovas: [] }
+    cl: null,           // cadastro de cliente: { id, c, orig, rota, sujo }
+    clientes: [],
+    buscaClientes: ""
   };
 
   var CORES = ["#7c3aed", "#e11d74", "#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#0ea5e9", "#2563eb", "#111827", "#a16207", "#be185d"];
@@ -43,7 +47,7 @@
   function dataBR(iso) { if (!iso) return ""; var p = String(iso).slice(0, 10).split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
   function hojeISO() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
   function vencido(p) { return p.vencimento && String(p.vencimento).slice(0, 10) < hojeISO(); }
-  function nomeDe(p) { return (p.dados && p.dados.nome) || p.cliente_nome || p.slug; }
+  function nomeDe(p) { return (p.dados && p.dados.nome) || (p.cliente && p.cliente.nome) || p.slug; }
   function selo(status) { return el("span", { class: "selo " + status, text: TEXTO_STATUS[status][0] }); }
   function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -146,7 +150,7 @@
   function excluirPerfil(p) {
     return confirmar({
       titulo: "Excluir perfil permanentemente?",
-      texto: "Apaga a página, todos os links, as fotos e os dados do cliente \"" + nomeDe(p) + "\".",
+      texto: "Apaga a página \"" + nomeDe(p) + "\", todos os links e as fotos. O cadastro do cliente continua.",
       alerta: "Não dá para desfazer. Se for só falta de pagamento, use \"Desativar\".",
       exigir: p.slug, botao: "Excluir para sempre", classe: "perigo"
     }).then(function (sim) {
@@ -161,9 +165,44 @@
   function mostrarLogin() {
     $("telaApp").hidden = true;
     $("telaLogin").hidden = false;
+    mostrarFormLogin(location.hash === "#esqueci");
     if (DB.demo) $("loginErro").textContent = "Modo demonstração: digite qualquer e-mail e senha.";
-    $("loginEmail").focus();
   }
+  function mostrarFormLogin(recuperar) {
+    $("formLogin").hidden = !!recuperar;
+    $("formRecuperar").hidden = !recuperar;
+    if (recuperar) {
+      if (!$("recuperarEmail").value) $("recuperarEmail").value = $("loginEmail").value;
+      $("recuperarErro").textContent = "";
+      $("recuperarEmail").focus();
+    } else $("loginEmail").focus();
+  }
+  $("btnEsqueci").addEventListener("click", function () { mostrarFormLogin(true); });
+  $("btnVoltarLogin").addEventListener("click", function () { if (location.hash === "#esqueci") history.replaceState(null, "", "#/"); mostrarFormLogin(false); });
+  $("formRecuperar").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = this.querySelector("button[type=submit]");
+    btn.disabled = true;
+    $("recuperarErro").textContent = "";
+    $("recuperarOk").hidden = true;
+    DB.recuperarSenha($("recuperarEmail").value).then(function () {
+      $("recuperarOk").textContent = DB.demo
+        ? "Modo demonstração: nenhum e-mail é enviado."
+        : "Se este e-mail tiver acesso ao painel, você vai receber um link em instantes. Confira também a caixa de spam.";
+      $("recuperarOk").hidden = false;
+      // Evita pedidos repetidos em sequência
+      var resta = 60, txt = btn.innerHTML;
+      btn.textContent = "Aguarde " + resta + "s";
+      var t = setInterval(function () {
+        resta--;
+        if (resta <= 0) { clearInterval(t); btn.innerHTML = txt; btn.disabled = false; }
+        else btn.textContent = "Aguarde " + resta + "s";
+      }, 1000);
+    }).catch(function (err) {
+      $("recuperarErro").textContent = err.amigavel ? err.message : "Não foi possível enviar agora. Tente novamente.";
+      btn.disabled = false;
+    });
+  });
   $("formLogin").addEventListener("submit", function (e) {
     e.preventDefault();
     var btn = e.submitter || this.querySelector("button");
@@ -176,15 +215,17 @@
       $("loginErro").textContent = err.amigavel ? err.message : "Não foi possível entrar.";
     }).then(function () { btn.disabled = false; });
   });
+  function haAlteracoes() { return !!((estado.ed && estado.ed.sujo) || (estado.cl && estado.cl.sujo)); }
+  function descartarTudo() { descartarEdicao(); estado.cl = null; }
   function confirmarDescarte() {
-    if (!(estado.ed && estado.ed.sujo)) return Promise.resolve(true);
-    return confirmar({ titulo: "Descartar alterações?", texto: "Há alterações neste perfil que ainda não foram salvas.", botao: "Descartar", classe: "perigo" });
+    if (!haAlteracoes()) return Promise.resolve(true);
+    return confirmar({ titulo: "Descartar alterações?", texto: "Há alterações que ainda não foram salvas.", botao: "Descartar", classe: "perigo" });
   }
   $("btnSair").addEventListener("click", function () {
     confirmarDescarte().then(function (sim) {
       if (!sim) return;
-      descartarEdicao();
-      DB.sair().then(function () { location.hash = ""; mostrarLogin(); });
+      descartarTudo();
+      DB.sair().then(function () { history.replaceState(null, "", "#/"); mostrarLogin(); });
     });
   });
 
@@ -192,47 +233,110 @@
     $("telaLogin").hidden = true;
     $("telaApp").hidden = false;
     $("usuarioEmail").textContent = usuario && usuario.email || "";
+    if (location.hash === "#esqueci") history.replaceState(null, "", "#/");
     rota();
   }
 
+  // ---------------------------------------------------------------------------
+  // Minha conta: trocar a senha (confere a senha atual)
+  // ---------------------------------------------------------------------------
+  $("btnConta").addEventListener("click", function () {
+    var atual = el("input", { type: "password", autocomplete: "current-password" });
+    var nova = el("input", { type: "password", autocomplete: "new-password" });
+    var conf = el("input", { type: "password", autocomplete: "new-password" });
+    var erroEl = el("p", { class: "erro", role: "alert" });
+    var regras = el("ul", { class: "regras-senha" });
+    function checar() {
+      var v = nova.value;
+      regras.innerHTML = "";
+      [[v.length >= 8, "Pelo menos 8 caracteres"], [/[A-Za-z]/.test(v) && /\d/.test(v), "Letras e números"],
+       [v && v === conf.value, "As duas senhas iguais"]].forEach(function (r) {
+        regras.appendChild(el("li", { class: r[0] ? "ok" : null }, [icone(r[0] ? "fa-solid fa-circle-check" : "fa-regular fa-circle"), " " + r[1]]));
+      });
+    }
+    nova.addEventListener("input", checar); conf.addEventListener("input", checar); checar();
+    var btn = el("button", { class: "btn primario", type: "submit" }, [icone("fa-solid fa-key"), " Trocar senha"]);
+    var form = el("form", {}, [
+      el("h2", { text: "Minha conta" }),
+      el("p", { text: "Conectado como " + ($("usuarioEmail").textContent || "administrador") + "." }),
+      el("label", {}, ["Senha atual", atual]),
+      el("label", {}, ["Nova senha", nova]),
+      el("label", {}, ["Repita a nova senha", conf]),
+      regras, erroEl,
+      el("p", { class: "dica", text: "Ao trocar, os outros aparelhos conectados com esta conta são desconectados." }),
+      el("div", { class: "modal-botoes" }, [el("button", { class: "btn", type: "button", text: "Fechar", onclick: function () { m.fechar(); } }), btn])
+    ]);
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      erroEl.textContent = "";
+      if (nova.value !== conf.value) { erroEl.textContent = "As duas senhas novas não são iguais."; conf.focus(); return; }
+      btn.disabled = true;
+      DB.alterarSenha(atual.value, nova.value).then(function () {
+        m.fechar();
+        toast(DB.demo ? "Modo demonstração: senha não foi alterada de verdade." : "Senha alterada! ✅");
+      }).catch(function (err) {
+        erroEl.textContent = err.amigavel ? err.message : "Não foi possível trocar a senha.";
+        (err.campo === "atual" ? atual : nova).focus();
+      }).then(function () { btn.disabled = false; });
+    });
+    var m = abrirModal([form]);
+  });
+
   // ===========================================================================
-  // Rotas: #/  (lista)   #/perfil/<id>  (editor)
+  // Rotas: #/ perfis · #/perfil/<id> · #/clientes · #/cliente/novo · #/cliente/<id>
   // ===========================================================================
+  function rotaEmEdicao() {
+    if (estado.ed) return "#/perfil/" + estado.ed.p.id;
+    if (estado.cl) return estado.cl.rota;
+    return null;
+  }
   var ignorarHash = false, hashAnterior = location.hash;
   window.addEventListener("hashchange", function () {
     if (ignorarHash) { ignorarHash = false; return; }
-    var saindoDoEditor = estado.ed && location.hash !== "#/perfil/" + estado.ed.p.id;
-    if (saindoDoEditor && estado.ed.sujo) {
-      // Volta para o editor e pergunta; se confirmar, segue para o destino.
+    if ($("telaApp").hidden) return;
+    var emEdicao = rotaEmEdicao(), saindo = emEdicao && location.hash !== emEdicao;
+    if (saindo && haAlteracoes()) {
+      // Volta para a tela em edição e pergunta; se confirmar, segue para o destino.
       var destino = location.hash;
       ignorarHash = true;
       location.hash = hashAnterior;
       confirmarDescarte().then(function (sim) {
         if (!sim) return;
-        descartarEdicao();
+        descartarTudo();
         location.hash = destino;
       });
       return;
     }
-    if (saindoDoEditor) descartarEdicao();
+    if (saindo) descartarTudo();
     hashAnterior = location.hash;
     rota();
   });
   window.addEventListener("beforeunload", function (e) {
-    if (estado.ed && estado.ed.sujo) { e.preventDefault(); e.returnValue = ""; }
+    if (haAlteracoes()) { e.preventDefault(); e.returnValue = ""; }
   });
 
+  var TELAS = ["telaLista", "telaEditor", "telaClientes", "telaCliente"];
+  function mostrarTela(id) {
+    TELAS.forEach(function (t) { $(t).hidden = t !== id; });
+    var emClientes = id === "telaClientes" || id === "telaCliente";
+    $("abaClientes").classList.toggle("ativa", emClientes);
+    $("abaPerfis").classList.toggle("ativa", !emClientes);
+    window.scrollTo(0, 0);
+  }
+
   function rota() {
-    var m = location.hash.match(/^#\/perfil\/([\w-]+)/);
-    if (m) abrirEditor(m[1]); else mostrarLista();
+    var h = location.hash, m;
+    if ((m = h.match(/^#\/perfil\/([\w-]+)/))) abrirEditor(m[1]);
+    else if (h === "#/clientes") mostrarClientes();
+    else if ((m = h.match(/^#\/cliente\/([\w-]+)/))) abrirCliente(m[1]);
+    else mostrarLista();
   }
 
   // ===========================================================================
   // Lista
   // ===========================================================================
   function mostrarLista() {
-    $("telaEditor").hidden = true;
-    $("telaLista").hidden = false;
+    mostrarTela("telaLista");
     document.title = "Perfis · Painel";
     $("lista").innerHTML = "";
     $("lista").appendChild(el("div", { class: "vazio", text: "Carregando…" }));
@@ -253,7 +357,8 @@
       if (estado.filtro === "vencidos" && !vencido(p)) return false;
       if (["ativo", "inativo", "rascunho"].indexOf(estado.filtro) >= 0 && p.status !== estado.filtro) return false;
       if (!b) return true;
-      return [p.slug, p.cliente_nome, p.cliente_contato, p.dados && p.dados.nome].join(" ").toLowerCase().indexOf(b) >= 0;
+      var c = p.cliente || {};
+      return [p.slug, c.nome, c.telefone, c.whatsapp, c.email, p.dados && p.dados.nome].join(" ").toLowerCase().indexOf(b) >= 0;
     });
 
     var alvo = $("lista");
@@ -268,7 +373,7 @@
       var url = DB.urlPerfil(p.slug);
       var foto = p.dados && p.dados.foto;
       var meta = [el("a", { href: url, target: "_blank", rel: "noopener" }, [icone("fa-solid fa-link"), " /" + p.slug])];
-      if (p.cliente_nome && p.cliente_nome !== nomeDe(p)) meta.push(el("span", {}, [icone("fa-regular fa-user"), " " + p.cliente_nome]));
+      if (p.cliente) meta.push(el("a", { href: "#/cliente/" + p.cliente.id }, [icone("fa-regular fa-user"), " " + p.cliente.nome]));
       if (p.vencimento) meta.push(el("span", { class: vencido(p) ? "vencido" : null }, [icone("fa-regular fa-calendar"), (vencido(p) ? " Venceu " : " Vence ") + dataBR(p.vencimento)]));
 
       var acoes = [
@@ -312,37 +417,88 @@
   // ---------------------------------------------------------------------------
   // Novo perfil
   // ---------------------------------------------------------------------------
-  $("btnNovo").addEventListener("click", function () {
-    var slugManual = false;
-    var nome = el("input", { type: "text", placeholder: "Ex.: Studio Bella Unhas", maxlength: "80" });
-    var slug = el("input", { type: "text", placeholder: "studio-bella", maxlength: "40" });
-    var erro = el("p", { class: "erro" });
-    nome.addEventListener("input", function () { if (!slugManual) slug.value = DB.gerarSlug(nome.value); });
-    slug.addEventListener("input", function () { slugManual = true; slug.value = slug.value.toLowerCase().replace(/[^a-z0-9-]/g, ""); });
-    var btn = el("button", { class: "btn primario", type: "submit" }, [icone("fa-solid fa-plus"), " Criar e configurar"]);
-    var form = el("form", {}, [
-      el("h2", { text: "Ativar novo perfil" }),
-      el("p", { text: "O perfil começa \"em configuração\". Depois de montar a página, clique em \"Liberar para o cliente\"." }),
-      el("label", {}, ["Nome do cliente", nome]),
-      el("label", {}, ["Link do perfil",
-        el("div", { class: "link-publico" }, [el("span", { text: DB.urlPerfil("") }), slug]),
-        el("div", { class: "dica", text: "É este endereço que vai gravado no chaveiro. Evite mudar depois." })]),
-      erro,
-      el("div", { class: "modal-botoes" }, [el("button", { class: "btn", type: "button", text: "Cancelar", onclick: function () { m.fechar(); } }), btn])
-    ]);
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      erro.textContent = "";
-      btn.disabled = true;
-      DB.criar({ cliente_nome: nome.value.trim(), slug: slug.value }).then(function (p) {
-        m.fechar();
-        location.hash = "#/perfil/" + p.id;
-      }).catch(function (err) {
-        erro.textContent = err.amigavel ? err.message : "Erro ao criar: " + err.message;
-      }).then(function () { btn.disabled = false; });
+  $("btnNovo").addEventListener("click", function () { novoPerfil(null); });
+
+  // Abre o modal de novo perfil. Com um cliente escolhido, a página já nasce com o
+  // nome dele e os contatos do cadastro (WhatsApp, e-mail, redes, site, endereço).
+  function novoPerfil(clienteId) {
+    DB.listarClientes().then(function (clientes) {
+      estado.clientes = clientes;
+      var slugManual = false, nomeManual = false;
+      var sel = el("select");
+      sel.appendChild(el("option", { value: "", text: "— Sem cliente —" }));
+      clientes.forEach(function (c) { sel.appendChild(el("option", { value: c.id, text: c.nome })); });
+      if (clienteId) sel.value = clienteId;
+      var nome = el("input", { type: "text", placeholder: "Ex.: Studio Bella Unhas", maxlength: "80" });
+      var slug = el("input", { type: "text", placeholder: "studio-bella", maxlength: "40" });
+      var importar = el("input", { type: "checkbox" });
+      importar.checked = true;
+      var linhaImportar = el("label", { class: "interruptor" }, [importar, "Já colocar na página os contatos e redes do cadastro"]);
+      var erroEl = el("p", { class: "erro" });
+      function clienteEscolhido() { return clientes.filter(function (c) { return c.id === sel.value; })[0] || null; }
+      function aoTrocarCliente() {
+        var c = clienteEscolhido();
+        linhaImportar.hidden = !c;
+        if (c && !nomeManual) { nome.value = c.nome.replace(/\s*\(exemplo\)$/, ""); if (!slugManual) slug.value = DB.gerarSlug(nome.value); }
+      }
+      sel.addEventListener("change", aoTrocarCliente);
+      nome.addEventListener("input", function () { nomeManual = true; if (!slugManual) slug.value = DB.gerarSlug(nome.value); });
+      slug.addEventListener("input", function () { slugManual = true; slug.value = slug.value.toLowerCase().replace(/[^a-z0-9-]/g, ""); });
+      var btn = el("button", { class: "btn primario", type: "submit" }, [icone("fa-solid fa-plus"), " Criar e configurar"]);
+      var form = el("form", {}, [
+        el("h2", { text: "Ativar novo perfil" }),
+        el("p", { text: "O perfil começa \"em configuração\". Depois de montar a página, clique em \"Liberar para o cliente\"." }),
+        el("label", {}, ["Cliente", sel, el("div", { class: "dica" }, ["Não está na lista? ", el("a", { href: "#/cliente/novo", onclick: function () { m.fechar(); } }, ["Cadastre o cliente primeiro"]), "."])]),
+        linhaImportar,
+        el("label", {}, ["Nome na página", nome]),
+        el("label", {}, ["Link do perfil",
+          el("div", { class: "link-publico" }, [el("span", { text: DB.urlPerfil("") }), slug]),
+          el("div", { class: "dica", text: "É este endereço que vai gravado no chaveiro. Evite mudar depois." })]),
+        erroEl,
+        el("div", { class: "modal-botoes" }, [el("button", { class: "btn", type: "button", text: "Cancelar", onclick: function () { m.fechar(); } }), btn])
+      ]);
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        erroEl.textContent = "";
+        btn.disabled = true;
+        var c = clienteEscolhido();
+        var carregar = c && importar.checked ? DB.obterCliente(c.id) : Promise.resolve(null);
+        carregar.then(function (completo) {
+          var dados = { nome: nome.value.trim(), descricao: "", foto: "", capa: "", cor: "#7c3aed", tema: "escuro", links: [], mostrarSalvarContato: true, mostrarCompartilhar: true };
+          if (completo) dados.links = linksDoCliente(completo, []);
+          return DB.criar({ slug: slug.value, cliente_id: c ? c.id : null, dados: dados });
+        }).then(function (p) {
+          m.fechar();
+          location.hash = "#/perfil/" + p.id;
+        }).catch(function (err) {
+          erroEl.textContent = err.amigavel ? err.message : "Erro ao criar: " + err.message;
+        }).then(function () { btn.disabled = false; });
+      });
+      var m = abrirModal([form]);
+      aoTrocarCliente();
+    }).catch(falhou);
+  }
+
+  // Links de página a partir do cadastro do cliente, sem repetir os que já existem.
+  function linksDoCliente(c, existentes) {
+    var novos = [], redes = c.redes || {};
+    function existe(tipo, campo, valor) {
+      return existentes.concat(novos).some(function (l) { return l.tipo === tipo && String(l[campo] || "").replace(/\D/g, "") === String(valor).replace(/\D/g, "") && (campo !== "usuario" || l[campo] === valor); });
+    }
+    function add(l) { novos.push(Object.assign({ id: uid() }, l)); }
+    if (c.whatsapp && !existentes.some(function (l) { return l.tipo === "whatsapp"; })) add({ tipo: "whatsapp", numero: c.whatsapp, mensagem: "Olá! Vim pelo seu chaveiro." });
+    if (c.telefone && c.telefone !== c.whatsapp && !existe("telefone", "numero", c.telefone)) add({ tipo: "telefone", numero: "+" + c.telefone });
+    if (c.email && !existentes.concat(novos).some(function (l) { return l.tipo === "email" && l.email === c.email; })) add({ tipo: "email", email: c.email });
+    DB.REDES_CLIENTE.forEach(function (k) {
+      if (k === "site" || !redes[k] || !TIPOS[k]) return;
+      if (!existentes.concat(novos).some(function (l) { return l.tipo === k && String(l.usuario || "").replace(/^@/, "") === redes[k]; })) add({ tipo: k, usuario: redes[k] });
     });
-    var m = abrirModal([form]);
-  });
+    if (redes.site && !existentes.concat(novos).some(function (l) { return l.tipo === "site" && l.url === redes.site; })) add({ tipo: "site", url: redes.site });
+    var endereco = [c.logradouro && (c.logradouro + (c.numero ? ", " + c.numero : "")), c.bairro, c.cidade && (c.cidade + (c.uf ? " - " + c.uf : "")), c.cep].filter(Boolean).join(", ");
+    if (c.logradouro && c.cidade && !existentes.concat(novos).some(function (l) { return l.tipo === "maps"; }))
+      add({ tipo: "maps", url: "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(endereco) });
+    return novos;
+  }
 
   // ===========================================================================
   // Editor
@@ -358,14 +514,15 @@
   }
 
   function abrirEditor(id) {
-    $("telaLista").hidden = true;
-    $("telaEditor").hidden = false;
+    mostrarTela("telaEditor");
     $("formEditor").innerHTML = "";
     $("previaTela").innerHTML = "";
     $("edTitulo").textContent = "Carregando…";
     $("edSelo").className = "";
     $("edSelo").textContent = "";
-    DB.obter(id).then(function (p) {
+    Promise.all([DB.obter(id), DB.listarClientes()]).then(function (res) {
+      var p = res[0];
+      estado.clientes = res[1];
       if (!p) { toast("Perfil não encontrado.", true); location.hash = "#/"; return; }
       p.dados = Object.assign({ links: [] }, p.dados || {});
       p.dados.links = (p.dados.links || []).map(function (l) { return l.id ? l : Object.assign({ id: uid() }, l); });
@@ -375,7 +532,7 @@
   }
 
   function editaveis(x) {
-    return JSON.stringify([x.slug, x.dados, x.cliente_nome || "", x.cliente_contato || "",
+    return JSON.stringify([x.slug, x.dados, x.cliente_id || null,
       x.vencimento ? String(x.vencimento).slice(0, 10) : null, x.observacoes || ""]);
   }
   function marcarSujo() {
@@ -611,21 +768,48 @@
       ])
     ]));
 
-    // --- Dados internos ------------------------------------------------------------
-    form.appendChild(cartao("fa-solid fa-lock", "Dados internos do cliente", [
+    // --- Cliente e cobrança (interno) --------------------------------------------------
+    var selCliente = el("select");
+    selCliente.appendChild(el("option", { value: "", text: "— Sem cliente —" }));
+    estado.clientes.forEach(function (c) { selCliente.appendChild(el("option", { value: c.id, text: c.nome })); });
+    selCliente.value = p.cliente_id || "";
+    var linkCliente = el("a", { class: "btn pequeno" }, [icone("fa-regular fa-address-card"), " Abrir cadastro"]);
+    var btnImportar = el("button", { class: "btn pequeno", type: "button", onclick: function () {
+      if (!p.cliente_id) return;
+      DB.obterCliente(p.cliente_id).then(function (c) {
+        var novos = c ? linksDoCliente(c, d.links) : [];
+        if (!novos.length) { toast("A página já tem todos os contatos do cadastro."); return; }
+        d.links = d.links.concat(novos);
+        desenharLinks();
+        marcarSujo();
+        toast(novos.length + (novos.length === 1 ? " link adicionado" : " links adicionados") + " no fim da lista.");
+      }).catch(falhou);
+    } }, [icone("fa-solid fa-file-import"), " Trazer contatos do cadastro"]);
+    function atualizarCliente() {
+      linkCliente.hidden = btnImportar.hidden = !p.cliente_id;
+      if (p.cliente_id) linkCliente.setAttribute("href", "#/cliente/" + p.cliente_id);
+    }
+    selCliente.addEventListener("change", function () {
+      p.cliente_id = selCliente.value || null;
+      p.cliente = estado.clientes.filter(function (c) { return c.id === p.cliente_id; })[0] || null;
+      atualizarCliente(); marcarSujo();
+    });
+    atualizarCliente();
+
+    form.appendChild(cartao("fa-solid fa-lock", "Cliente e cobrança", [
       el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Só você vê. Não aparece na página." }),
       el("div", { class: "grade" }, [
-        campoTexto("Nome do cliente", p.cliente_nome, function (v) { p.cliente_nome = v; marcarSujo(); }),
-        campoTexto("Contato (WhatsApp/e-mail)", p.cliente_contato, function (v) { p.cliente_contato = v; marcarSujo(); }),
+        el("label", { class: "todo" }, ["Cliente", selCliente,
+          el("div", { class: "status-botoes", style: "margin-top:8px" }, [linkCliente, btnImportar, el("a", { class: "btn pequeno fantasma", href: "#/cliente/novo" }, [icone("fa-solid fa-user-plus"), " Novo cliente"])])]),
         campoTexto("Próximo vencimento", p.vencimento ? String(p.vencimento).slice(0, 10) : "", function (v) { p.vencimento = v || null; marcarSujo(); },
           { tipo: "date", dica: "Perfis vencidos ficam destacados na lista (filtro \"Vencidos\")." }),
-        campoTexto("Observações", p.observacoes, function (v) { p.observacoes = v; marcarSujo(); }, { classe: "todo", multilinha: true, ph: "Plano, valor, forma de pagamento, nº do chaveiro..." })
+        campoTexto("Observações", p.observacoes, function (v) { p.observacoes = v; marcarSujo(); }, { classe: "todo", multilinha: true, ph: "Forma de pagamento, nº do chaveiro, combinados..." })
       ])
     ]));
 
     // --- Excluir ---------------------------------------------------------------------
     form.appendChild(cartao("fa-solid fa-triangle-exclamation", "Excluir perfil", [
-      el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Apaga a página, os links, as fotos e os dados internos. Não pode ser desfeito." }),
+      el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Apaga a página, os links e as fotos. O cadastro do cliente continua. Não pode ser desfeito." }),
       el("button", { class: "btn perigo", type: "button", onclick: function () {
         excluirPerfil(estado.ed.orig).then(function (ok) {
           if (!ok) return;
@@ -730,8 +914,8 @@
     var btn = $("btnSalvar");
     btn.disabled = true;
     var p = ed.p, patch = {
-      dados: p.dados, cliente_nome: p.cliente_nome || "", cliente_contato: p.cliente_contato || "",
-      vencimento: p.vencimento || null, observacoes: p.observacoes || ""
+      dados: p.dados, cliente_id: p.cliente_id || null,
+      vencimento: p.vencimento || null, observacoes: p.observacoes || null
     };
     if (p.slug !== ed.orig.slug) patch.slug = p.slug;
     var antigas = [ed.orig.dados.foto, ed.orig.dados.capa];
@@ -747,6 +931,7 @@
       r.dados = p.dados;
       ed.orig = clonar(r);
       ed.p.slug = r.slug;
+      ed.p.cliente = r.cliente || null;
       if (slugMudou) desenharEditor(); else { cabecalhoEditor(); marcarSujo(); }
       toast("Salvo! ✅");
       return true;
@@ -755,15 +940,348 @@
   }
   $("btnSalvar").addEventListener("click", salvar);
   document.addEventListener("keydown", function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && estado.ed) { e.preventDefault(); salvar(); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && (estado.ed || estado.cl)) { e.preventDefault(); if (estado.ed) salvar(); else salvarCliente(); }
   });
   $("btnPrevia").addEventListener("click", function () { $("previa").classList.add("aberta"); });
   $("btnFecharPrevia").addEventListener("click", function () { $("previa").classList.remove("aberta"); });
 
   // ===========================================================================
+  // Clientes
+  // ===========================================================================
+  var TEXTO_REDES = {
+    instagram: ["Instagram", "fa-brands fa-instagram", "usuario"], facebook: ["Facebook", "fa-brands fa-facebook-f", "usuario ou página"],
+    tiktok: ["TikTok", "fa-brands fa-tiktok", "usuario"], youtube: ["YouTube", "fa-brands fa-youtube", "canal"],
+    linkedin: ["LinkedIn", "fa-brands fa-linkedin-in", "usuario"], x: ["X (Twitter)", "fa-brands fa-x-twitter", "usuario"],
+    kwai: ["Kwai", "fa-solid fa-video", "usuario"], pinterest: ["Pinterest", "fa-brands fa-pinterest-p", "usuario"],
+    telegram: ["Telegram", "fa-brands fa-telegram", "usuario"], site: ["Site", "fa-solid fa-globe", "www.exemplo.com.br"]
+  };
+
+  // Formatação para exibir (o banco guarda só os números)
+  function fmtDoc(v) {
+    var d = DB.soDigitos(v);
+    if (d.length <= 11) return d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+    return d.slice(0, 14).replace(/^(\d{2})(\d)/, "$1.$2").replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2").replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+  }
+  function fmtTel(v) {
+    var d = DB.soDigitos(v);
+    if (d.length >= 12 && d.indexOf("55") === 0) d = d.slice(2);
+    if (d.length > 11) return "+" + d;
+    if (d.length > 10) return d.replace(/^(\d{2})(\d{5})(\d{0,4}).*/, "($1) $2-$3");
+    if (d.length > 6) return d.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+    if (d.length > 2) return d.replace(/^(\d{2})(\d*)/, "($1) $2");
+    return d;
+  }
+  function fmtCep(v) { var d = DB.soDigitos(v).slice(0, 8); return d.length > 5 ? d.slice(0, 5) + "-" + d.slice(5) : d; }
+  function fmtValor(v) { return v == null || v === "" ? "" : Number(v).toFixed(2).replace(".", ","); }
+  function cidadeUF(c) { return [c.cidade, c.uf].filter(Boolean).join("/"); }
+
+  function mostrarClientes() {
+    mostrarTela("telaClientes");
+    document.title = "Clientes · Painel";
+    $("listaClientes").innerHTML = "";
+    $("listaClientes").appendChild(el("div", { class: "vazio", text: "Carregando…" }));
+    DB.listarClientes().then(function (lista) {
+      estado.clientes = lista || [];
+      desenharClientes();
+    }).catch(falhou);
+  }
+
+  function desenharClientes() {
+    var todos = estado.clientes, alvo = $("listaClientes");
+    var comPerfil = todos.filter(function (c) { return c.total_perfis > 0; }).length;
+    $("resumoClientes").textContent = todos.length + (todos.length === 1 ? " cliente" : " clientes") + " · " + comPerfil + " com perfil";
+    var b = estado.buscaClientes.trim().toLowerCase(), bd = DB.soDigitos(b);
+    var vis = todos.filter(function (c) {
+      if (!b) return true;
+      var txt = [c.nome, c.email, c.cidade, c.uf, c.plano].join(" ").toLowerCase();
+      var nums = [c.documento, c.telefone, c.whatsapp].join(" ");
+      return txt.indexOf(b) >= 0 || (bd.length >= 3 && nums.indexOf(bd) >= 0);
+    });
+    alvo.innerHTML = "";
+    if (!todos.length) {
+      alvo.appendChild(el("div", { class: "vazio" }, [icone("fa-solid fa-users"), "Nenhum cliente ainda. Clique em \"Novo cliente\" para cadastrar o primeiro."]));
+      return;
+    }
+    if (!vis.length) { alvo.appendChild(el("div", { class: "vazio", text: "Nenhum cliente encontrado com essa busca." })); return; }
+    vis.forEach(function (c) {
+      var meta = [];
+      if (c.whatsapp || c.telefone) meta.push(el("span", {}, [icone(c.whatsapp ? "fa-brands fa-whatsapp" : "fa-solid fa-phone"), " " + fmtTel(c.whatsapp || c.telefone)]));
+      if (c.email) meta.push(el("span", {}, [icone("fa-regular fa-envelope"), " " + c.email]));
+      if (cidadeUF(c)) meta.push(el("span", {}, [icone("fa-solid fa-location-dot"), " " + cidadeUF(c)]));
+      if (c.plano || c.valor_mensal != null) meta.push(el("span", {}, [icone("fa-regular fa-credit-card"), " " + [c.plano, c.valor_mensal != null ? "R$ " + fmtValor(c.valor_mensal) : ""].filter(Boolean).join(" · ")]));
+      var iniciais = c.nome.replace(/\(.*?\)/g, "").trim().split(/\s+/).map(function (x) { return x[0]; }).slice(0, 2).join("").toUpperCase();
+      alvo.appendChild(el("div", { class: "item" }, [
+        el("div", { class: "item-foto iniciais", text: iniciais }),
+        el("div", { class: "item-info" }, [
+          el("div", { class: "item-nome" }, [c.nome, el("span", { class: "selo neutro", text: c.total_perfis + (c.total_perfis === 1 ? " perfil" : " perfis") })]),
+          el("div", { class: "item-meta" }, meta)
+        ]),
+        el("div", { class: "item-acoes" }, [
+          el("a", { class: "btn pequeno", href: "#/cliente/" + c.id }, [icone("fa-solid fa-pen"), " Editar"]),
+          el("button", { class: "btn pequeno", type: "button", onclick: function () { novoPerfil(c.id); } }, [icone("fa-solid fa-plus"), " Perfil"]),
+          el("button", { class: "btn pequeno icone perigo-leve", type: "button", title: "Excluir", "aria-label": "Excluir " + c.nome, onclick: function () {
+            excluirCliente(c).then(function (ok) { if (ok) mostrarClientes(); });
+          } }, [icone("fa-solid fa-trash-can")])
+        ])
+      ]));
+    });
+  }
+  $("buscaClientes").addEventListener("input", function () { estado.buscaClientes = this.value; desenharClientes(); });
+
+  function excluirCliente(c) {
+    var n = c.total_perfis || 0;
+    return confirmar({
+      titulo: "Excluir o cliente " + c.nome + "?",
+      texto: "Apaga o cadastro (contato, endereço, redes e observações). " +
+        (n ? (n === 1 ? "O perfil dele não é apagado: só fica sem cliente ligado." : "Os " + n + " perfis dele não são apagados: só ficam sem cliente ligado.") : "Ele não tem perfis."),
+      alerta: "Não dá para desfazer.", botao: "Excluir cliente", classe: "perigo"
+    }).then(function (sim) {
+      if (!sim) return false;
+      return DB.excluirCliente(c.id).then(function () { toast("Cliente excluído."); return true; });
+    }).catch(function (e) { falhou(e); return false; });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cadastro do cliente
+  // ---------------------------------------------------------------------------
+  function clienteParaForm(c) {
+    c = c || {};
+    var redes = {};
+    DB.REDES_CLIENTE.forEach(function (k) { redes[k] = (c.redes && c.redes[k]) || ""; });
+    return {
+      nome: c.nome || "", tipo_pessoa: c.tipo_pessoa || "fisica", documento: c.documento ? fmtDoc(c.documento) : "",
+      nascimento: c.nascimento || "", email: c.email || "", telefone: c.telefone ? fmtTel(c.telefone) : "",
+      whatsapp: c.whatsapp ? fmtTel(c.whatsapp) : "", cep: c.cep ? fmtCep(c.cep) : "", logradouro: c.logradouro || "",
+      numero: c.numero || "", complemento: c.complemento || "", bairro: c.bairro || "", cidade: c.cidade || "", uf: c.uf || "",
+      redes: redes, plano: c.plano || "", valor_mensal: fmtValor(c.valor_mensal), observacoes: c.observacoes || ""
+    };
+  }
+
+  function abrirCliente(id) {
+    mostrarTela("telaCliente");
+    $("formCliente").innerHTML = "";
+    $("clTitulo").textContent = "Carregando…";
+    var novo = id === "novo";
+    Promise.all([novo ? Promise.resolve(null) : DB.obterCliente(id), novo ? Promise.resolve([]) : DB.listar()]).then(function (res) {
+      if (!novo && !res[0]) { toast("Cliente não encontrado.", true); location.hash = "#/clientes"; return; }
+      var c = clienteParaForm(res[0]);
+      estado.cl = { id: novo ? null : id, c: c, orig: JSON.stringify(c), rota: "#/cliente/" + id, sujo: false,
+        perfis: (res[1] || []).filter(function (p) { return p.cliente_id === id; }) };
+      desenharCliente();
+    }).catch(falhou);
+  }
+
+  function marcarClienteSujo() {
+    var cl = estado.cl;
+    if (!cl) return;
+    cl.sujo = JSON.stringify(cl.c) !== cl.orig;
+    $("clSalvo").textContent = cl.sujo ? "Alterações não salvas" : (cl.id ? "Tudo salvo" : "");
+    $("clSalvo").className = "salvo" + (cl.sujo ? " pendente" : "");
+  }
+
+  function desenharCliente() {
+    var cl = estado.cl, c = cl.c, form = $("formCliente");
+    form.innerHTML = "";
+    $("clTitulo").textContent = cl.id ? c.nome || "Cliente" : "Novo cliente";
+    document.title = (cl.id ? c.nome : "Novo cliente") + " · Painel";
+    var campos = {};
+
+    // campo(chave, rótulo, opções): input ligado a c[chave] (ou c.redes[chave] com rede: true)
+    function campo(chave, rotulo, o) {
+      o = o || {};
+      var alvo = o.rede ? c.redes : c;
+      var input = el(o.multilinha ? "textarea" : "input", {
+        type: o.multilinha ? null : (o.tipo || "text"), placeholder: o.ph || "", maxlength: o.max || null,
+        inputmode: o.inputmode || null, autocomplete: o.autocomplete || "off", id: "cl-" + chave
+      });
+      input.value = alvo[chave] || "";
+      input.addEventListener("input", function () {
+        if (o.mascara) { var f = o.mascara(input.value); if (f !== input.value) input.value = f; }
+        alvo[chave] = input.value;
+        input.classList.remove("invalido");
+        if (o.aoMudar) o.aoMudar(input.value);
+        marcarClienteSujo();
+      });
+      campos[chave] = input;
+      var rot = o.icone ? [icone(o.icone), " " + rotulo] : [rotulo];
+      return el("label", { class: o.classe || null, for: "cl-" + chave }, rot.concat([input, o.dica ? el("div", { class: "dica", text: o.dica }) : null]));
+    }
+
+    // --- Dados ---
+    var tipo = el("div", { class: "segmentado" });
+    var rotDoc = el("span"), rotNasc = el("span"), rotNome = el("span");
+    function rotulosTipo() {
+      var pj = c.tipo_pessoa === "juridica";
+      rotDoc.textContent = pj ? "CNPJ" : "CPF";
+      rotNasc.textContent = pj ? "Data de fundação" : "Data de nascimento";
+      rotNome.textContent = pj ? "Razão social ou nome fantasia" : "Nome completo";
+      if (campos.documento) campos.documento.placeholder = pj ? "00.000.000/0000-00" : "000.000.000-00";
+    }
+    [["fisica", "Pessoa física"], ["juridica", "Pessoa jurídica"]].forEach(function (t) {
+      tipo.appendChild(el("button", { type: "button", class: c.tipo_pessoa === t[0] ? "sel" : null, onclick: function () {
+        c.tipo_pessoa = t[0];
+        Array.prototype.forEach.call(tipo.children, function (b) { b.classList.remove("sel"); });
+        this.classList.add("sel");
+        rotulosTipo(); marcarClienteSujo();
+      } }, [t[1]]));
+    });
+    var lNome = campo("nome", "", { max: 120, classe: "todo", aoMudar: function (v) { $("clTitulo").textContent = v || (cl.id ? "Cliente" : "Novo cliente"); } });
+    lNome.insertBefore(rotNome, lNome.firstChild);
+    var lDoc = campo("documento", "", { mascara: fmtDoc, inputmode: "numeric", max: 18 });
+    lDoc.insertBefore(rotDoc, lDoc.firstChild);
+    var lNasc = campo("nascimento", "", { tipo: "date" });
+    lNasc.insertBefore(rotNasc, lNasc.firstChild);
+    rotulosTipo();
+    form.appendChild(cartao("fa-regular fa-address-card", "Dados do cliente", [
+      el("div", { class: "grade" }, [el("div", { class: "todo" }, [tipo]), lNome, lDoc, lNasc])
+    ]));
+
+    // --- Contato ---
+    form.appendChild(cartao("fa-solid fa-phone", "Contato", [
+      el("div", { class: "grade" }, [
+        campo("whatsapp", "WhatsApp", { mascara: fmtTel, inputmode: "tel", ph: "(11) 99999-9999", icone: "fa-brands fa-whatsapp" }),
+        campo("telefone", "Telefone", { mascara: fmtTel, inputmode: "tel", ph: "(11) 3333-4444", icone: "fa-solid fa-phone" }),
+        campo("email", "E-mail", { tipo: "email", ph: "cliente@exemplo.com", classe: "todo", icone: "fa-regular fa-envelope", inputmode: "email" })
+      ])
+    ]));
+
+    // --- Endereço (CEP preenche o resto) ---
+    var dicaCep = el("div", { class: "dica" });
+    var ultimoCep = DB.soDigitos(c.cep);
+    function buscarCep(v) {
+      var d = DB.soDigitos(v);
+      if (d.length !== 8 || d === ultimoCep) return;
+      ultimoCep = d;
+      dicaCep.textContent = "Buscando endereço…";
+      fetch("https://viacep.com.br/ws/" + d + "/json/").then(function (r) { return r.json(); }).then(function (e) {
+        if (!estado.cl || estado.cl.c !== c) return;
+        if (e.erro) { dicaCep.textContent = "CEP não encontrado. Preencha o endereço à mão."; return; }
+        [["logradouro", e.logradouro], ["bairro", e.bairro], ["cidade", e.localidade], ["uf", e.uf]].forEach(function (x) {
+          if (!x[1]) return;
+          c[x[0]] = x[1];
+          if (campos[x[0]]) campos[x[0]].value = x[1];
+        });
+        dicaCep.textContent = "Endereço preenchido pelo CEP. Confira e complete o número.";
+        marcarClienteSujo();
+        if (campos.numero && !c.numero) campos.numero.focus();
+      }).catch(function () { dicaCep.textContent = "Não foi possível buscar o CEP agora. Preencha o endereço à mão."; });
+    }
+    var lCep = campo("cep", "CEP", { mascara: fmtCep, inputmode: "numeric", ph: "00000-000", max: 9, aoMudar: buscarCep });
+    lCep.appendChild(dicaCep);
+    var selUf = el("select", { id: "cl-uf" });
+    selUf.appendChild(el("option", { value: "", text: "—" }));
+    DB.UFS.forEach(function (u) { selUf.appendChild(el("option", { value: u, text: u })); });
+    selUf.value = c.uf || "";
+    selUf.addEventListener("change", function () { c.uf = selUf.value; selUf.classList.remove("invalido"); marcarClienteSujo(); });
+    campos.uf = { focus: function () { selUf.focus(); }, classList: selUf.classList, set value(v) { selUf.value = v; } };
+    form.appendChild(cartao("fa-solid fa-location-dot", "Endereço", [
+      el("div", { class: "grade endereco" }, [
+        lCep,
+        campo("logradouro", "Rua / Avenida", { classe: "todo" }),
+        campo("numero", "Número", { max: 20 }),
+        campo("complemento", "Complemento", { ph: "Sala, apto, bloco..." }),
+        campo("bairro", "Bairro"),
+        campo("cidade", "Cidade"),
+        el("label", { for: "cl-uf" }, ["UF", selUf])
+      ])
+    ]));
+
+    // --- Redes sociais ---
+    form.appendChild(cartao("fa-solid fa-hashtag", "Redes sociais", [
+      el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Use só o @usuario (sem o @) ou o link. Dá para trazer tudo para a página do perfil depois." }),
+      el("div", { class: "grade" }, DB.REDES_CLIENTE.map(function (k) {
+        var t = TEXTO_REDES[k];
+        return campo(k, t[0], { rede: true, ph: t[2], icone: t[1], tipo: k === "site" ? "url" : "text" });
+      }))
+    ]));
+
+    // --- Plano ---
+    var lista = el("datalist", { id: "planos" }, ["Mensal", "Trimestral", "Semestral", "Anual", "Pagamento único"].map(function (x) { return el("option", { value: x }); }));
+    var lPlano = campo("plano", "Plano", { ph: "Mensal, Anual..." });
+    lPlano.querySelector("input").setAttribute("list", "planos");
+    form.appendChild(cartao("fa-regular fa-credit-card", "Plano e observações", [
+      el("div", { class: "grade" }, [
+        lPlano, lista,
+        campo("valor_mensal", "Valor (R$)", { inputmode: "decimal", ph: "19,90", mascara: function (v) { return v.replace(/[^\d,.]/g, ""); } }),
+        campo("observacoes", "Observações", { multilinha: true, classe: "todo", ph: "Forma de pagamento, preferências, combinados..." })
+      ])
+    ]));
+
+    // --- Perfis do cliente ---
+    if (cl.id) {
+      var itens = cl.perfis.map(function (p) {
+        return el("div", { class: "perfil-do-cliente" }, [
+          el("a", { href: "#/perfil/" + p.id }, [nomeDe(p)]), selo(p.status),
+          el("span", { class: "sub", text: "/" + p.slug })
+        ]);
+      });
+      form.appendChild(cartao("fa-solid fa-id-card", "Perfis deste cliente", [
+        itens.length ? el("div", { class: "perfis-do-cliente" }, itens) : el("p", { class: "sub", text: "Nenhum perfil ainda." }),
+        el("button", { class: "btn", type: "button", style: "margin-top:12px", onclick: function () {
+          var ir = function () { novoPerfil(cl.id); };
+          if (cl.sujo) salvarCliente().then(function (ok) { if (ok) ir(); }); else ir();
+        } }, [icone("fa-solid fa-plus"), " Criar perfil para este cliente"])
+      ]));
+      form.appendChild(cartao("fa-solid fa-triangle-exclamation", "Excluir cliente", [
+        el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Apaga o cadastro. Os perfis dele não são apagados: só ficam sem cliente ligado." }),
+        el("button", { class: "btn perigo", type: "button", onclick: function () {
+          excluirCliente({ id: cl.id, nome: c.nome, total_perfis: cl.perfis.length }).then(function (ok) {
+            if (!ok) return;
+            estado.cl = null;
+            location.hash = "#/clientes";
+          });
+        } }, [icone("fa-solid fa-trash-can"), " Excluir cliente"])
+      ]));
+    }
+
+    form.onsubmit = function (e) { e.preventDefault(); salvarCliente(); };
+    cl.campos = campos;
+    marcarClienteSujo();
+    if (!cl.id) setTimeout(function () { campos.nome.focus(); }, 30);
+  }
+
+  function salvarCliente() {
+    var cl = estado.cl;
+    if (!cl) return Promise.resolve(false);
+    try { DB.validarCliente(cl.c); }
+    catch (e) {
+      toast(e.message, true);
+      var f = e.campo && cl.campos[e.campo];
+      if (f) { f.classList.add("invalido"); f.focus(); }
+      return Promise.resolve(false);
+    }
+    var btn = $("btnSalvarCliente");
+    btn.disabled = true;
+    var acao = cl.id ? DB.salvarCliente(cl.id, cl.c) : DB.criarCliente(cl.c);
+    return acao.then(function (r) {
+      if (estado.cl !== cl) return true;
+      var eraNovo = !cl.id;
+      cl.id = r.id;
+      cl.c = clienteParaForm(r);
+      cl.orig = JSON.stringify(cl.c);
+      cl.sujo = false;
+      if (eraNovo) {
+        cl.rota = "#/cliente/" + r.id;
+        history.replaceState(null, "", cl.rota);
+        hashAnterior = cl.rota;
+      }
+      desenharCliente();
+      toast(eraNovo ? "Cliente cadastrado! ✅" : "Salvo! ✅");
+      return true;
+    }).catch(function (e) {
+      falhou(e);
+      var f = e.campo && cl.campos[e.campo];
+      if (f) { f.classList.add("invalido"); f.focus(); }
+      return false;
+    }).then(function (ok) { btn.disabled = false; return ok; });
+  }
+  $("btnSalvarCliente").addEventListener("click", salvarCliente);
+
+  // ===========================================================================
   // Início
   // ===========================================================================
-  $("nomeMarca").textContent = (cfg.marca || "Painel") + " · Perfis";
+  $("nomeMarca").textContent = (cfg.marca || "Painel") + " · Painel";
   if (DB.demo) $("faixaDemo").hidden = false;
   DB.sessao().then(function (u) { if (u) entrarNoApp(u); else mostrarLogin(); }).catch(mostrarLogin);
 })();

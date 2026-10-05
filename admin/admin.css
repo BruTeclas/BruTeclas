@@ -232,3 +232,42 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .toast-admin { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px); background: var(--texto); color: #fff; padding: 11px 18px; border-radius: 12px; font-size: .9rem; opacity: 0; pointer-events: none; transition: .2s; z-index: 200; max-width: calc(100% - 32px); }
 .toast-admin.ver { opacity: 1; transform: translate(-50%, 0); }
 .toast-admin.erro-t { background: var(--vermelho); }
+
+/* Abas, conta e login */
+.abas { display: flex; gap: 4px; margin-right: auto; margin-left: 18px; }
+.aba { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 10px; color: var(--texto2); text-decoration: none; font-weight: 500; font-size: .9rem; }
+.aba:hover { background: rgba(0, 0, 0, .05); color: var(--texto); }
+.aba.ativa { background: color-mix(in srgb, var(--primaria) 10%, #fff); color: var(--primaria); }
+#btnConta .usuario { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) {
+  .barra { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+  .abas { order: 3; width: 100%; margin: 0; }
+  .aba { flex: 1; justify-content: center; }
+  .some-celular { display: none; }
+}
+.link-botao { display: block; width: 100%; margin-top: 14px; background: none; border: 0; color: var(--primaria); font: inherit; font-size: .88rem; cursor: pointer; text-align: center; }
+.link-botao:hover { text-decoration: underline; }
+.ok-msg { background: var(--verde-claro); color: #0b6b35; border-radius: 10px; padding: 10px 12px; font-size: .88rem; margin: 6px 0; }
+.regras-senha { list-style: none; padding: 0; margin: 12px 0 4px; display: grid; gap: 4px; font-size: .84rem; color: var(--texto2); }
+.regras-senha li.ok { color: var(--verde); }
+.campo-senha { position: relative; display: block; }
+.campo-senha input { padding-right: 44px; }
+.mostrar-senha { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); margin-top: 3px; border: 0; background: none; color: var(--texto2); cursor: pointer; padding: 6px 8px; }
+.aviso-senha p { margin: 8px 0 16px; line-height: 1.5; }
+
+/* Clientes */
+.conteudo.estreito { max-width: 860px; }
+.item-foto.iniciais { background: color-mix(in srgb, var(--primaria) 12%, #fff); color: var(--primaria); font-weight: 700; font-size: .95rem; }
+.selo.neutro { background: var(--cinza-claro); color: var(--texto2); }
+.selo.neutro::before { display: none; }
+input.invalido, select.invalido { border-color: var(--vermelho); outline: 2px solid color-mix(in srgb, var(--vermelho) 25%, transparent); }
+label i { color: var(--texto2); width: 16px; text-align: center; }
+.grade.endereco { grid-template-columns: 1fr 1fr 1fr; }
+.grade.endereco .todo { grid-column: 2 / -1; }
+@media (max-width: 700px) { .grade.endereco { grid-template-columns: 1fr 1fr; } .grade.endereco .todo { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .grade.endereco { grid-template-columns: 1fr; } }
+.perfis-do-cliente { display: grid; gap: 8px; }
+.perfil-do-cliente { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 10px; }
+.perfil-do-cliente a { font-weight: 600; color: var(--texto); text-decoration: none; }
+.perfil-do-cliente a:hover { color: var(--primaria); }
+.perfil-do-cliente .sub { margin: 0; }
