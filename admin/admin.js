@@ -369,7 +369,7 @@
       if (!p) { toast("Perfil não encontrado.", true); location.hash = "#/"; return; }
       p.dados = Object.assign({ links: [] }, p.dados || {});
       p.dados.links = (p.dados.links || []).map(function (l) { return l.id ? l : Object.assign({ id: uid() }, l); });
-      estado.ed = { orig: clonar(p), p: p, sujo: false, imagensNovas: [] };
+      estado.ed = { orig: clonar(p), p: p, sujo: false, imagensNovas: [], aoMudar: [] };
       desenharEditor();
     }).catch(falhou);
   }
@@ -381,6 +381,7 @@
   function marcarSujo() {
     var ed = estado.ed;
     ed.sujo = editaveis(ed.p) !== editaveis(ed.orig);
+    ed.aoMudar.forEach(function (f) { f(); });
     $("edSalvo").textContent = ed.sujo ? "Alterações não salvas" : "Tudo salvo";
     $("edSalvo").className = "salvo" + (ed.sujo ? " pendente" : "");
     atualizarPrevia();
@@ -414,6 +415,7 @@
     var ed = estado.ed, p = ed.p, d = p.dados;
     var form = $("formEditor");
     form.innerHTML = "";
+    ed.aoMudar = [];
     cabecalhoEditor();
 
     // --- Status e link ---------------------------------------------------------
@@ -488,7 +490,7 @@
       el("div", { class: "imagens" }, [
         el("div", {}, [el("span", { class: "upload-rotulo", text: "Foto de perfil" }), caixaUpload("foto", "avatar")]),
         el("div", {}, [el("span", { class: "upload-rotulo", text: "Foto de fundo" }), caixaUpload("capa", "capa"),
-          el("div", { class: "dica", text: "Fica atrás da página, escurecida para os botões continuarem legíveis." })])
+          el("div", { class: "dica", text: "Sem foto, o fundo usa a cor principal. Com foto, ela fica atrás da página, escurecida para os botões continuarem legíveis." })])
       ]),
       el("div", { class: "grade", style: "margin-top:18px" }, [
         el("div", {}, [el("label", { text: "Cor principal" }), el("div", { style: "display:flex;gap:10px;align-items:center;flex-wrap:wrap" }, [coresBox, corInput])]),
@@ -668,9 +670,11 @@
   function caixaUpload(chave, classe) {
     var d = estado.ed.p.dados;
     var input = el("input", { type: "file", accept: "image/*" });
+    var textoPrincipal = el("span", { text: "Clique ou arraste uma imagem" });
+    var textoSub = el("small");
     var caixa = el("label", { class: "upload " + classe }, [
       input,
-      el("span", { class: "upload-texto" }, [icone("fa-solid fa-camera"), el("span", { text: "Clique ou arraste uma imagem" })])
+      el("span", { class: "upload-texto" }, [icone("fa-solid fa-camera"), textoPrincipal, textoSub])
     ]);
     var remover = el("button", { class: "upload-remover", type: "button", title: "Remover imagem", "aria-label": "Remover imagem", onclick: function (e) {
       e.preventDefault();
@@ -684,7 +688,16 @@
       caixa.style.backgroundImage = u ? "url(\"" + String(u).replace(/"/g, "%22") + "\")" : "";
       caixa.classList.toggle("tem-imagem", !!u);
       remover.hidden = !u;
+      if (classe === "capa") {
+        // Sem foto, mostra o fundo padrão na cor e no tema atuais
+        caixa.classList.toggle("fundo-padrao", !u);
+        caixa.classList.toggle("claro", !u && d.tema === "claro");
+        caixa.style.setProperty("--cor", d.cor || "#7c3aed");
+        textoPrincipal.textContent = u ? "Trocar foto de fundo" : "Sem foto: fundo na cor principal";
+        textoSub.textContent = u ? "" : "Clique ou arraste para enviar uma foto";
+      }
     }
+    if (classe === "capa") estado.ed.aoMudar.push(atualizar);
     function enviar(arquivo) {
       if (!arquivo) return;
       var ed = estado.ed;

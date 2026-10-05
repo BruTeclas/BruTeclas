@@ -46,11 +46,6 @@
       '<rect width="200" height="200" fill="url(#g)"/><text x="100" y="100" dy=".35em" text-anchor="middle" ' +
       'font-family="Arial,sans-serif" font-size="70" font-weight="700" fill="#fff">' + iniciais + '</text></svg>');
   }
-  function capaExemplo(c1, c2) {
-    return imagemSvg('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">' +
-      '<rect width="400" height="800" fill="' + c1 + '"/><circle cx="330" cy="90" r="190" fill="' + c2 + '" opacity=".55"/>' +
-      '<circle cx="40" cy="330" r="150" fill="' + c2 + '" opacity=".3"/></svg>');
-  }
   function diasDaqui(n) { var d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
   function exemplosDemo() {
     function perfil(i, slug, status, dados, interno) {
@@ -63,7 +58,7 @@
     return [
       perfil(1, "studio-bella", "ativo", {
         nome: "Studio Bella Unhas", descricao: "Manicure & Nail Designer • Campinas/SP\nAtendimento com hora marcada 💅",
-        foto: avatarExemplo("SB", "#e11d74", "#f59e0b"), capa: capaExemplo("#2a0f1f", "#e11d74"), cor: "#e11d74",
+        foto: avatarExemplo("SB", "#e11d74", "#f59e0b"), cor: "#e11d74",
         links: [
           { id: "l1", tipo: "whatsapp", numero: "5519999999999", mensagem: "Olá! Vim pelo chaveiro e quero agendar um horário." },
           { id: "l2", tipo: "pix", chave: "bella@exemplo.com", nome: "Bella Souza", cidade: "Campinas" },

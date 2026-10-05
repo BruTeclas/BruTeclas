@@ -157,7 +157,7 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 /* Upload de imagens */
 .imagens { display: grid; grid-template-columns: 140px 1fr; gap: 16px; }
 @media (max-width: 600px) { .imagens { grid-template-columns: 1fr; } }
-.upload { position: relative; border: 2px dashed var(--linha); border-radius: 14px; background: var(--cinza-claro) center / cover no-repeat; display: grid; place-items: center; text-align: center; color: var(--texto2); font-size: .8rem; cursor: pointer; overflow: hidden; transition: border-color .15s; }
+.upload { position: relative; border: 2px dashed var(--linha); border-radius: 14px; background-color: var(--cinza-claro); background-position: center; background-size: cover; background-repeat: no-repeat; display: grid; place-items: center; text-align: center; color: var(--texto2); font-size: .8rem; cursor: pointer; overflow: hidden; transition: border-color .15s; }
 .upload:hover, .upload.arrastando { border-color: var(--primaria); }
 .upload.avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto; }
 .upload.capa { height: 140px; }
@@ -166,6 +166,10 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .upload.tem-imagem:hover .upload-texto { opacity: 1; }
 .upload-texto { position: absolute; inset: 0; display: grid; place-content: center; gap: 6px; padding: 10px; transition: opacity .15s; }
 .upload-texto i { font-size: 1.3rem; }
+.upload.fundo-padrao { background-color: var(--bg); background-position: 0 0; background-size: auto; border-style: solid; }
+.upload.fundo-padrao .upload-texto { color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .55); }
+.upload.fundo-padrao.claro .upload-texto { color: #18181b; text-shadow: none; }
+.upload-texto small { font-size: .75rem; opacity: .85; }
 .upload input { display: none; }
 .upload-remover { position: absolute; top: 6px; right: 6px; z-index: 2; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
 .upload.avatar .upload-remover { top: 10px; right: 10px; }

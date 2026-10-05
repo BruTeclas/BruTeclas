@@ -28,6 +28,21 @@
 }
 .perfil *, .perfil *::before, .perfil *::after { box-sizing: border-box; }
 
+/* Fundo sem foto: formas na cor principal, que mudam junto com ela.
+   .fundo-padrao reaproveita o mesmo desenho na caixa "Foto de fundo" do painel. */
+.perfil, .fundo-padrao { --forma-1: 45%; --forma-2: 24%; --forma-base: 20%; }
+.perfil.claro, .fundo-padrao.claro { --forma-1: 30%; --forma-2: 16%; --forma-base: 12%; }
+.fundo-padrao { --cor: #7c3aed; --bg: #0f0f14; }
+.fundo-padrao.claro { --bg: #f4f4f7; }
+.perfil:not(.com-capa), .fundo-padrao {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(180deg, transparent 0, transparent 300px, var(--bg) 760px),
+    radial-gradient(circle 190px at calc(100% - 50px) 70px, color-mix(in srgb, var(--cor) var(--forma-1), transparent) 99.5%, transparent 100%),
+    radial-gradient(circle 150px at 30px 330px, color-mix(in srgb, var(--cor) var(--forma-2), transparent) 99.5%, transparent 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cor) var(--forma-base), var(--bg)) 0, var(--bg) 760px);
+}
+
 /* Foto de fundo */
 .perfil-capa {
   position: absolute; inset: 0; z-index: -1;
