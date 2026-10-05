@@ -1,0 +1,41 @@
+# Regras do servidor (Hostinger: Apache/LiteSpeed)
+# nfcliente.com.br/<link>  ->  perfil.html   ·   /admin  ->  painel
+
+DirectoryIndex index.html
+Options -Indexes
+AddDefaultCharset utf-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Sempre HTTPS e sem "www"
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteCond %{HTTP_HOST} ^(?:www\.)?(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+  # Arquivos que não fazem parte do site publicado
+  RewriteRule ^(\.git|supabase|README\.md|vercel\.json|_redirects)(/|$) - [R=404,L]
+
+  # /admin -> /admin/
+  RewriteRule ^admin$ /admin/ [L,R=301]
+
+  # Arquivos e pastas que existem são servidos normalmente
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Qualquer /<link-do-perfil> abre a página do perfil
+  RewriteRule ^[a-z0-9-]{1,40}/?$ /perfil.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  # Sempre confere se há versão nova das páginas, estilos e scripts
+  <FilesMatch "\.(html|css|js)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

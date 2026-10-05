@@ -1,17 +1,17 @@
 # BruTeclas · Perfis para chaveiros NFC
 
 Sistema para criar e gerenciar páginas de links ("link na bio") para clientes.
-Cada cliente ganha um endereço próprio, por exemplo `bruteclas.com.br/studio-bella`,
+Cada cliente ganha um endereço próprio, por exemplo `nfcliente.com.br/studio-bella`,
 que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a página abre.
 
 ## Como funciona
 
 ```
                 ┌──────────────────────────────┐
- Chaveiro NFC → │ bruteclas.com.br/studio-bella │ → perfil.html busca o perfil "studio-bella"
+ Chaveiro NFC → │ nfcliente.com.br/studio-bella │ → perfil.html busca o perfil "studio-bella"
                 └──────────────────────────────┘          │
                                                            ▼
- Você → bruteclas.com.br/admin (login) ──────────► Supabase (banco + fotos)
+ Você → nfcliente.com.br/admin (login) ──────────► Supabase (banco + fotos)
         cria, edita, ativa, desativa, exclui
 ```
 
@@ -88,8 +88,8 @@ O projeto **NFC Ambiente** já está configurado:
 Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com/dashboard](https://supabase.com/dashboard), no projeto **NFC Ambiente**:
 
 1. **Authentication → URL Configuration**
-   - **Site URL:** o endereço do site, por exemplo `https://bruteclas.com.br`. Enquanto testa no computador, use `http://localhost:3000`.
-   - **Redirect URLs:** adicione `https://bruteclas.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
+   - **Site URL:** o endereço do site, por exemplo `https://nfcliente.com.br`. Enquanto testa no computador, use `http://localhost:3000`.
+   - **Redirect URLs:** adicione `https://nfcliente.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
 2. **Authentication → Sign In / Providers → Email**
    - Desligue **"Allow new users to sign up"**. Ninguém cria conta sozinho; só entra quem você cadastrar.
    - Mantenha **"Confirm email"** ligado.
@@ -105,7 +105,7 @@ Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com
    Esses modelos levam para `admin/redefinir-senha.html`. O código do link só é usado quando você clica em "Salvar senha", então antivírus de e-mail que abrem links antes de você não o invalidam.
 4. **Crie o seu acesso:** **Authentication → Users → Add user → Create new user**, com `bru.teclas@gmail.com`, uma senha forte e **"Auto Confirm User"** marcado. A conta vira administradora sozinha.
    Depois que o site estiver no ar, você também pode usar **"Send invitation"**: chega um e-mail para criar a senha.
-5. **E-mail de verdade (recomendado):** o envio padrão do Supabase só entrega para e-mails da equipe do projeto e tem limite por hora. Para você, isso basta. Para mais administradores, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**, por exemplo [Resend](https://resend.com) ou [Brevo](https://www.brevo.com), com remetente como `nao-responda@bruteclas.com.br`.
+5. **E-mail de verdade (recomendado):** o envio padrão do Supabase só entrega para e-mails da equipe do projeto e tem limite por hora. Para você, isso basta. Para mais administradores, configure um SMTP próprio em **Authentication → Emails → SMTP Settings**, por exemplo [Resend](https://resend.com) ou [Brevo](https://www.brevo.com), com remetente como `nao-responda@nfcliente.com.br`.
 
 **Outro administrador:** no **SQL Editor**, rode `insert into public.admins_autorizados (email) values ('email@exemplo.com');` e depois convide o e-mail em **Users → Invite user**.
 

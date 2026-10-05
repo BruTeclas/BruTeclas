@@ -15,7 +15,7 @@ window.CONFIG = {
 
   // Endereço público do site, usado nos links e QR Codes dos perfis.
   // Vazio = usa o endereço atual do navegador.
-  dominio: "",           // ex.: "https://bruteclas.com.br"
+  dominio: "https://nfcliente.com.br",
 
   marca: "BruTeclas",
 
