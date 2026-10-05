@@ -176,10 +176,16 @@
       $("loginErro").textContent = err.amigavel ? err.message : "Não foi possível entrar.";
     }).then(function () { btn.disabled = false; });
   });
+  function confirmarDescarte() {
+    if (!(estado.ed && estado.ed.sujo)) return Promise.resolve(true);
+    return confirmar({ titulo: "Descartar alterações?", texto: "Há alterações neste perfil que ainda não foram salvas.", botao: "Descartar", classe: "perigo" });
+  }
   $("btnSair").addEventListener("click", function () {
-    if (estado.ed && estado.ed.sujo && !window.confirm("Há alterações não salvas. Sair mesmo assim?")) return;
-    descartarEdicao();
-    DB.sair().then(function () { location.hash = ""; mostrarLogin(); });
+    confirmarDescarte().then(function (sim) {
+      if (!sim) return;
+      descartarEdicao();
+      DB.sair().then(function () { location.hash = ""; mostrarLogin(); });
+    });
   });
 
   function entrarNoApp(usuario) {
@@ -196,9 +202,16 @@
   window.addEventListener("hashchange", function () {
     if (ignorarHash) { ignorarHash = false; return; }
     var saindoDoEditor = estado.ed && location.hash !== "#/perfil/" + estado.ed.p.id;
-    if (saindoDoEditor && estado.ed.sujo && !window.confirm("Há alterações não salvas. Descartar?")) {
+    if (saindoDoEditor && estado.ed.sujo) {
+      // Volta para o editor e pergunta; se confirmar, segue para o destino.
+      var destino = location.hash;
       ignorarHash = true;
       location.hash = hashAnterior;
+      confirmarDescarte().then(function (sim) {
+        if (!sim) return;
+        descartarEdicao();
+        location.hash = destino;
+      });
       return;
     }
     if (saindoDoEditor) descartarEdicao();
@@ -526,7 +539,7 @@
           if (c.tipo === "icone") {
             var sel = el("select");
             Perfil.ICONES.forEach(function (o) { var op = el("option", { value: o[0], text: o[1] }); if (l.icone === o[0]) op.selected = true; sel.appendChild(op); });
-            sel.addEventListener("change", function () { l.icone = sel.value; ic.firstChild.className = sel.value; marcarSujo(); });
+            sel.addEventListener("change", function () { l.icone = sel.value; ic.replaceChildren(icone(sel.value)); marcarSujo(); });
             corpo.appendChild(el("label", {}, [c.rotulo, sel]));
             return;
           }
