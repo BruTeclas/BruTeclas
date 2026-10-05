@@ -41,8 +41,15 @@ language plpgsql security definer
 set search_path = ''
 as $$
 begin
+  -- Só promove contas criadas pelo painel do Supabase (Add user) ou por convite.
+  -- Contas do cadastro público (signUp) recebem confirmation_sent_at e nunca são promovidas,
+  -- mesmo que alguém se cadastre antes com um e-mail autorizado.
   if new.email_confirmed_at is not null
-     and exists (select 1 from public.admins_autorizados where email = lower(new.email)) then
+     and (new.invited_at is not null or new.confirmation_sent_at is null)
+     and exists (
+       select 1 from public.admins_autorizados a
+       where a.email = lower(new.email) and a.criado_em <= new.created_at
+     ) then
     insert into public.admins (user_id) values (new.id) on conflict do nothing;
   end if;
   return new;
@@ -186,10 +193,11 @@ create policy "admin apaga imagens" on storage.objects
   for delete to authenticated using (bucket_id = 'imagens' and (select public.is_admin()));
 
 -- =============================================================================
--- Quem é administrador: inclua o e-mail aqui ANTES de criar a conta
--- (Authentication > Users > Add user). A conta vira administradora sozinha
--- quando o e-mail estiver confirmado. Para uma conta que já existe, rode também
--- a segunda linha.
+-- Quem é administrador: inclua o e-mail aqui ANTES de criar a conta pelo painel
+-- (Authentication > Users > Add user ou Invite user). A conta vira administradora
+-- sozinha quando o e-mail estiver confirmado. Contas do cadastro público nunca são
+-- promovidas. Para uma conta que já existe, confira-a em auth.users e rode a
+-- segunda linha.
 --
 -- insert into public.admins_autorizados (email) values ('email@exemplo.com') on conflict do nothing;
 -- insert into public.admins (user_id) select id from auth.users where lower(email) = 'email@exemplo.com' and email_confirmed_at is not null on conflict do nothing;

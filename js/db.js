@@ -76,6 +76,15 @@
     return d;
   }
 
+  // Valor em reais: aceita "19,90", "19.90", "1.234,56", "1234.5" e "1.234".
+  function lerValor(v) {
+    var t = String(v).trim().replace(/^R\$\s*/i, "").replace(/\s/g, "");
+    if (t.indexOf(",") >= 0) t = t.replace(/\./g, "").replace(",", ".");   // vírgula decimal, ponto de milhar
+    else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");    // "1.234" = mil duzentos e trinta e quatro
+    if (!/^\d+(\.\d+)?$/.test(t)) return NaN;
+    return Number(t);
+  }
+
   // Devolve um objeto pronto para gravar ou lança erro com o campo problemático.
   function validarCliente(c) {
     c = c || {};
@@ -120,7 +129,7 @@
     r.plano = texto(c.plano);
     var valor = texto(c.valor_mensal);
     if (valor != null) {
-      var n = Number(String(valor).replace(/\./g, "").replace(",", "."));
+      var n = lerValor(valor);
       if (!isFinite(n) || n < 0) throw erro("Valor mensal inválido.", "valor_mensal");
       r.valor_mensal = Math.round(n * 100) / 100;
     } else r.valor_mensal = null;
@@ -232,30 +241,51 @@
         gravarLista(CHAVE_CLIENTES, clientesExemplo());
         return;
       }
-      // Versão antiga: o nome do cliente ficava dentro do perfil. Vira um cliente de verdade.
+      // Versão antiga: nome e contato do cliente ficavam dentro do perfil. Viram um cliente de
+      // verdade, sem perder nenhum texto. Trabalha numa cópia e grava os clientes primeiro.
       var perfis = lerLista(CHAVE), clientes = [], porNome = {};
       perfis.forEach(function (p) {
-        var c = p.dados && p.dados.capa;
-        if (c && c.indexOf("data:image/svg+xml,") === 0 && decodeURIComponent(c.slice(19)).indexOf('<circle cx="330" cy="90" r="190"') >= 0) p.dados.capa = "";
         var nome = String(p.cliente_nome || "").trim();
+        var contato = String(p.cliente_contato || "").trim();
+        if (!nome && contato) nome = String((p.dados && p.dados.nome) || p.slug || "Cliente").trim();
         if (nome && !p.cliente_id) {
-          if (!porNome[nome]) {
-            var contato = String(p.cliente_contato || "").trim(), novo = { nome: nome };
-            if (/@/.test(contato)) novo.email = contato; else if (soDigitos(contato).length >= 10) novo.whatsapp = contato;
-            var cli;
-            try { cli = validarCliente(novo); } catch (e) { cli = validarCliente({ nome: nome, observacoes: contato }); }
-            porNome[nome] = Object.assign({ id: uuid(), created_at: p.created_at || agora(), updated_at: agora() }, cli);
-            clientes.push(porNome[nome]);
+          var cli = porNome[nome];
+          if (!cli) {
+            cli = { nome: nome.slice(0, 120) };
+            // Só aproveita o contato como campo quando ele é exatamente um e-mail ou um telefone
+            if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contato)) cli.email = contato;
+            else if (/^[\d\s()+.-]+$/.test(contato) && soDigitos(contato).length >= 10 && soDigitos(contato).length <= 13) cli.whatsapp = contato;
+            try { cli = validarCliente(cli); } catch (e) { cli = validarCliente({ nome: cli.nome }); }
+            cli = Object.assign({ id: uuid(), created_at: p.created_at || agora(), updated_at: agora(), contatos: [] }, cli);
+            porNome[nome] = cli;
+            clientes.push(cli);
           }
-          p.cliente_id = porNome[nome].id;
+          if (contato && cli.contatos.indexOf(contato) < 0) cli.contatos.push(contato);
+          p.cliente_id = cli.id;
         }
         if (p.cliente_id === undefined) p.cliente_id = null;
         delete p.cliente_nome; delete p.cliente_contato;
       });
-      gravarLista(CHAVE, perfis);
+      clientes.forEach(function (c) {
+        // O texto original do contato fica sempre guardado nas observações
+        if (c.contatos.length) c.observacoes = [c.observacoes, "Contato antigo: " + c.contatos.join(" · ")].filter(Boolean).join("\n");
+        delete c.contatos;
+      });
       gravarLista(CHAVE_CLIENTES, clientes);
+      try { gravarLista(CHAVE, perfis); }
+      catch (e) { guarda.apagar(CHAVE_CLIENTES); throw e; }   // dados antigos ficam intactos para tentar de novo
     }
-    function ler() { preparar(); return lerLista(CHAVE); }
+    function ler() {
+      preparar();
+      var lista = lerLista(CHAVE), antiga = false;
+      // Exemplos antigos traziam uma imagem de fundo de cor fixa; sem ela, o fundo segue a cor principal.
+      lista.forEach(function (p) {
+        var c = p.dados && p.dados.capa;
+        if (c && c.indexOf("data:image/svg+xml,") === 0 && decodeURIComponent(c.slice(19)).indexOf('<circle cx="330" cy="90" r="190"') >= 0) { p.dados.capa = ""; antiga = true; }
+      });
+      if (antiga) gravarLista(CHAVE, lista);
+      return lista;
+    }
     function lerClientes() { preparar(); return lerLista(CHAVE_CLIENTES); }
     function agora() { return new Date().toISOString(); }
     function uuid() { return (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); }
@@ -267,7 +297,7 @@
     function comCliente(p, clientes) { return Object.assign({}, p, { cliente: resumoCliente(clientes || lerClientes(), p.cliente_id) }); }
     function docEmUso(lista, doc, id) { return doc && lista.some(function (c) { return c.documento === doc && c.id !== id; }); }
 
-    return {
+    var api = {
       demo: true,
       sessao: function () { var e = guarda.ler(CHAVE_SESSAO); return Promise.resolve(e ? { email: e } : null); },
       entrar: function (email) { guarda.gravar(CHAVE_SESSAO, email || "demo"); return Promise.resolve({ email: email }); },
@@ -360,6 +390,16 @@
         return Promise.resolve();
       }
     };
+    // Erros de leitura/gravação (ex.: armazenamento cheio) viram promessas rejeitadas,
+    // para a tela mostrar a mensagem em vez de ficar presa em "Carregando…".
+    Object.keys(api).forEach(function (k) {
+      var f = api[k];
+      if (typeof f !== "function") return;
+      api[k] = function () {
+        try { return f.apply(api, arguments); } catch (e) { return Promise.reject(e); }
+      };
+    });
+    return api;
   }
 
   // ---------------------------------------------------------------------------
@@ -541,7 +581,18 @@
 
   function urlBase() { return (cfg.dominio || location.origin).replace(/\/+$/, ""); }
 
-  var db = cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase ? criarSupabase() : criarDemo();
+  // Sem Supabase configurado: demonstração. Configurado mas sem a biblioteca (rede, bloqueador):
+  // erro claro, nunca a demonstração (que aceitaria qualquer senha).
+  function criarIndisponivel() {
+    var msg = "Não foi possível carregar o sistema. Verifique sua internet e recarregue a página.";
+    function falha() { return Promise.reject(erro(msg)); }
+    var d = { demo: false, indisponivel: msg, sessao: function () { return Promise.resolve(null); } };
+    ["entrar", "sair", "recuperarSenha", "alterarSenha", "listar", "obter", "criar", "salvar", "excluir", "enviarImagem",
+     "removerImagem", "perfilPublico", "listarClientes", "obterCliente", "criarCliente", "salvarCliente", "excluirCliente"]
+      .forEach(function (k) { d[k] = falha; });
+    return d;
+  }
+  var db = !(cfg.supabaseUrl && cfg.supabaseAnonKey) ? criarDemo() : (window.supabase ? criarSupabase() : criarIndisponivel());
   db.validarSlug = validarSlug;
   db.gerarSlug = gerarSlug;
   db.validarCliente = validarCliente;

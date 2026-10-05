@@ -30,7 +30,7 @@
   function rede(nome, icone, base, cor, corIcone) {
     var href = perfilUrl(base);
     return {
-      nome: nome, icone: icone, grupo: "rede", cor: cor, corIcone: corIcone, campos: CAMPO_USUARIO, href: href,
+      nome: nome, icone: icone, grupo: "rede", cor: cor, corIcone: corIcone, campos: CAMPO_USUARIO, href: href, falta: "o usuário ou o link",
       titulo: nome, sub: function (l) { return href(l).replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""); }
     };
   }
@@ -39,19 +39,20 @@
     whatsapp: {
       nome: "WhatsApp", icone: "fa-brands fa-whatsapp", grupo: "botao", cor: "#25d366",
       titulo: "Chamar no WhatsApp", sub: function () { return "Resposta rápida"; },
+      falta: "o número com DDD",
       campos: [
-        { k: "numero", rotulo: "Número (DDI + DDD + número)", ph: "5511999999999" },
+        { k: "numero", rotulo: "Número com DDD", ph: "(11) 99999-9999", dica: "O 55 do Brasil entra sozinho." },
         { k: "mensagem", rotulo: "Mensagem pronta (opcional)", ph: "Olá! Vim pelo seu chaveiro..." }
       ],
       href: function (l) {
-        var n = soDigitos(l.numero);
+        var n = numeroInternacional(l.numero);
         if (!n) return "";
         return "https://wa.me/" + n + (l.mensagem ? "?text=" + encodeURIComponent(l.mensagem) : "");
       }
     },
     pix: {
       nome: "Pix", icone: "fa-brands fa-pix", grupo: "botao", cor: "#32bcad",
-      titulo: "Pagar com Pix", sub: function () { return "QR Code e Copia e Cola"; },
+      titulo: "Pagar com Pix", sub: function () { return "QR Code e Copia e Cola"; }, falta: "a chave Pix",
       campos: [
         { k: "chave", rotulo: "Chave Pix", ph: "CPF, CNPJ, e-mail, +5511999999999 ou aleatória" },
         { k: "nome", rotulo: "Nome do recebedor", ph: "Como está no banco" },
@@ -63,38 +64,45 @@
     google_avaliar: {
       nome: "Google – Avaliar", icone: "fa-brands fa-google", grupo: "botao", cor: "#4285f4",
       titulo: "Avalie no Google", sub: function () { return "Sua opinião ajuda muito ⭐"; },
-      campos: [{ k: "url", rotulo: "Link de avaliação", ph: "https://g.page/r/.../review" }],
-      href: function (l) { return l.url; }
+      campos: [{ k: "url", rotulo: "Link de avaliação", ph: "https://g.page/r/.../review" }], falta: "o link de avaliação",
+      href: function (l) { return comEsquema(l.url); }
     },
     maps: {
       nome: "Google Maps", icone: "fa-solid fa-location-dot", grupo: "botao", cor: "#ea4335",
       titulo: "Como chegar", sub: function () { return "Abrir no Google Maps"; },
-      campos: [{ k: "url", rotulo: "Link do Maps", ph: "https://maps.app.goo.gl/..." }],
-      href: function (l) { return l.url; }
+      campos: [{ k: "url", rotulo: "Link do Maps", ph: "https://maps.app.goo.gl/..." }], falta: "o link do Maps",
+      href: function (l) { return comEsquema(l.url); }
     },
     google_perfil: {
       nome: "Google – Perfil da Empresa", icone: "fa-brands fa-google", grupo: "botao", cor: "#4285f4",
       titulo: "Perfil no Google", sub: function () { return "Horários, fotos e mais"; },
-      campos: [{ k: "url", rotulo: "Link do perfil", ph: "https://..." }],
-      href: function (l) { return l.url; }
+      campos: [{ k: "url", rotulo: "Link do perfil", ph: "https://..." }], falta: "o link do perfil",
+      href: function (l) { return comEsquema(l.url); }
     },
     email: {
       nome: "E-mail", icone: "fa-solid fa-envelope", grupo: "botao", cor: "#f59e0b",
       titulo: "Enviar e-mail", sub: function (l) { return l.email; },
-      campos: [{ k: "email", rotulo: "E-mail", ph: "contato@exemplo.com" }],
+      campos: [{ k: "email", rotulo: "E-mail", ph: "contato@exemplo.com" }], falta: "um e-mail válido",
       href: function (l) { var e = String(l.email || "").trim(); return e ? "mailto:" + e : ""; }
     },
     telefone: {
       nome: "Telefone", icone: "fa-solid fa-phone", grupo: "botao", cor: "#3b82f6",
       titulo: "Ligar", sub: function (l) { return l.numero; },
-      campos: [{ k: "numero", rotulo: "Telefone", ph: "+55 11 99999-9999" }],
-      href: function (l) { var n = String(l.numero || "").replace(/[^\d+]/g, ""); return n ? "tel:" + n : ""; }
+      campos: [{ k: "numero", rotulo: "Telefone com DDD", ph: "(11) 3333-4444" }], falta: "o número com DDD",
+      href: function (l) {
+        var bruto = String(l.numero || "").trim(), d = soDigitos(bruto);
+        if (d.length < 3) return "";
+        if (bruto.charAt(0) === "+") return "tel:+" + d;
+        if (d.charAt(0) === "0") return "tel:" + d;                    // 0800, 0300...
+        var n = numeroInternacional(d);
+        return "tel:" + (n ? "+" + n : d);
+      }
     },
     site: {
       nome: "Site", icone: "fa-solid fa-globe", grupo: "botao",
       titulo: "Site", sub: function (l) { return String(l.url || "").replace(/^https?:\/\//, ""); },
-      campos: [{ k: "url", rotulo: "Endereço", ph: "https://..." }],
-      href: function (l) { return l.url; }
+      campos: [{ k: "url", rotulo: "Endereço", ph: "www.exemplo.com.br" }], falta: "o endereço do site",
+      href: function (l) { return comEsquema(l.url); }
     },
     link: {
       nome: "Link personalizado", icone: "fa-solid fa-link", grupo: "botao",
@@ -102,10 +110,10 @@
       campos: [
         { k: "titulo", rotulo: "Texto do botão", ph: "Ver cardápio" },
         { k: "subtitulo", rotulo: "Texto menor (opcional)", ph: "Atualizado toda semana" },
-        { k: "url", rotulo: "Link", ph: "https://..." },
+        { k: "url", rotulo: "Link", ph: "www.exemplo.com.br/pagina" },
         { k: "icone", rotulo: "Ícone", tipo: "icone" }
       ],
-      href: function (l) { return l.url; }
+      falta: "o link", href: function (l) { return comEsquema(l.url); }
     },
     instagram: rede("Instagram", "fa-brands fa-instagram", "https://instagram.com/{u}", "linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"),
     facebook:  rede("Facebook", "fa-brands fa-facebook-f", "https://facebook.com/{u}", "#1877f2"),
@@ -141,6 +149,18 @@
   // Utilitários
   // ---------------------------------------------------------------------------
   function soDigitos(s) { return String(s || "").replace(/\D/g, ""); }
+  // Número com DDI: completa com 55 (Brasil) quando vier só DDD + número.
+  function numeroInternacional(v) {
+    var d = soDigitos(v).replace(/^0+/, "");
+    if (d.length === 10 || d.length === 11) d = "55" + d;
+    return d.length >= 12 && d.length <= 15 ? d : "";
+  }
+  // "www.site.com.br" -> "https://www.site.com.br"
+  function comEsquema(u) {
+    u = String(u || "").trim();
+    if (u && !/^[a-z][a-z0-9+.-]*:/i.test(u) && /^[\w-]+(\.[\w-]+)+([\/?#].*)?$/.test(u)) return "https://" + u;
+    return u;
+  }
   function urlSegura(u) { u = String(u || "").trim(); return /^(https?:|mailto:|tel:)/i.test(u) ? u : ""; }
   function imgSegura(u) { u = String(u || ""); return /^(https?:|data:image\/|blob:)/i.test(u) || /^[\w./-]+$/.test(u) ? u : ""; }
   function semAcento(s) {
@@ -299,6 +319,10 @@
     ]);
   }
 
+  function oQueFalta(l) {
+    var t = TIPOS[l && l.tipo];
+    return t ? (t.falta || String(t.campos[0].rotulo).toLowerCase()) : "";
+  }
   function tituloLink(l, t) {
     return String((l.tipo === "link" ? l.titulo : l.rotulo) || "").trim() || t.titulo || t.nome;
   }
@@ -328,7 +352,17 @@
 
     (d.links || []).forEach(function (l) {
       var r = resolverLink(l);
-      if (!r) return;
+      if (!r) {
+        // Na prévia do painel, o link incompleto aparece tracejado dizendo o que falta.
+        var ti = TIPOS[l.tipo];
+        if (opcoes.mostrarIncompletos && ti) {
+          botoes.appendChild(el("div", { class: "perfil-botao incompleto", "aria-hidden": "true" }, [
+            el("span", { class: "ic" }, [icone(l.tipo === "link" && l.icone ? l.icone : ti.icone)]),
+            el("span", { class: "tx" }, [tituloLink(l, ti), el("small", { text: "Falta " + oQueFalta(l) + " · não aparece na página" })])
+          ]));
+        }
+        return;
+      }
       var t = r.tipo, href = r.href, acao = r.acao;
       var externo = /^https?:/i.test(href);
       var nomeIcone = l.tipo === "link" && l.icone ? l.icone : t.icone;
@@ -389,7 +423,8 @@
   }
 
   window.Perfil = {
-    TIPOS: TIPOS, ICONES: ICONES, DESTAQUES: DESTAQUES, resolverLink: resolverLink,
+    TIPOS: TIPOS, ICONES: ICONES, DESTAQUES: DESTAQUES, resolverLink: resolverLink, oQueFalta: oQueFalta,
+    numeroInternacional: numeroInternacional,
     render: render, renderAviso: renderAviso,
     gerarPix: gerarPix, copiar: copiar, avisar: avisar, el: el, icone: icone
   };

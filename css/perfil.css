@@ -100,6 +100,11 @@ button.perfil-rede { appearance: none; -webkit-appearance: none; padding: 0; fon
 .perfil-botao .tx { flex: 1; min-width: 0; }
 .perfil-botao small { display: block; color: var(--texto2); font-weight: 400; font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perfil-botao .seta { color: var(--texto2); font-size: .85rem; }
+/* Só na prévia do painel: link incompleto */
+.perfil-botao.incompleto { background: transparent; border: 1.5px dashed color-mix(in srgb, var(--texto) 45%, transparent); opacity: .8; cursor: default; }
+.perfil-botao.incompleto:hover { transform: none; background: transparent; }
+.perfil-botao.incompleto .ic { background: color-mix(in srgb, var(--texto) 30%, transparent) !important; }
+.perfil-botao.incompleto small { white-space: normal; }
 
 .perfil-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
 .perfil-acoes .perfil-botao { justify-content: center; font-size: .9rem; padding: 12px; gap: 8px; }

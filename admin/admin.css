@@ -271,3 +271,6 @@ label i { color: var(--texto2); width: 16px; text-align: center; }
 .perfil-do-cliente a { font-weight: 600; color: var(--texto); text-decoration: none; }
 .perfil-do-cliente a:hover { color: var(--primaria); }
 .perfil-do-cliente .sub { margin: 0; }
+
+.link-aviso { display: flex; gap: 8px; align-items: flex-start; margin: 0 12px 12px; padding: 9px 12px; border-radius: 10px; background: var(--amarelo-claro); color: var(--amarelo); font-size: .84rem; font-weight: 500; }
+.link-aviso i { margin-top: 2px; }

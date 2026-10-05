@@ -159,7 +159,8 @@ vercel.json           Rotas para a Vercel
 
 - Visitantes só conseguem ler **um perfil pelo link exato** e **apenas se estiver no ar**. Não dá para listar perfis nem ver dados internos (função `perfil_publico`).
 - **Clientes, perfis e fotos:** criar, editar e excluir exige login **e** estar na tabela `admins`. Visitantes e usuários comuns não veem nenhum dado de cliente.
-- **Quem pode virar administrador:** a lista `admins_autorizados` só pode ser mudada pelo SQL Editor. Nem um administrador consegue alterá-la pelo site.
+- **Quem pode virar administrador:** a lista `admins_autorizados` só pode ser mudada pelo SQL Editor; nem um administrador consegue alterá-la pelo site. A promoção automática só vale para contas criadas pelo painel do Supabase (*Add user* ou *Invite user*) depois de o e-mail ser autorizado. Contas do cadastro público nunca viram administradoras.
+- **Se o Supabase não carregar** (falha de internet ou bloqueador), o painel mostra um erro. Ele nunca cai no modo demonstração, que aceitaria qualquer senha.
 - **Sessão:** o painel confere se a conta é administradora ao entrar e ao reabrir. Se não for, desconecta.
 - **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
 

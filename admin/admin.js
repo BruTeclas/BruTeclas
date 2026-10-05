@@ -167,6 +167,7 @@
     $("telaLogin").hidden = false;
     mostrarFormLogin(location.hash === "#esqueci");
     if (DB.demo) $("loginErro").textContent = "Modo demonstração: digite qualquer e-mail e senha.";
+    if (DB.indisponivel) $("loginErro").textContent = DB.indisponivel;
   }
   function mostrarFormLogin(recuperar) {
     $("formLogin").hidden = !!recuperar;
@@ -549,7 +550,7 @@
     tPrevia = setTimeout(function () {
       if (!estado.ed) return;
       var tela = $("previaTela"), rolagem = tela.scrollTop;
-      Perfil.render(tela, estado.ed.p.dados, { urlPublica: DB.urlPerfil(estado.ed.p.slug) });
+      Perfil.render(tela, estado.ed.p.dados, { urlPublica: DB.urlPerfil(estado.ed.p.slug), mostrarIncompletos: true });
       tela.scrollTop = rolagem;
     }, 120);
   }
@@ -691,6 +692,8 @@
         x.item.classList.toggle("incompleto", !valido);
         x.item.classList.toggle("destaque", destaque);
         x.selo.hidden = !destaque;
+        x.aviso.hidden = valido;
+        if (!valido) x.aviso.lastChild.textContent = " Este botão ainda não aparece na página: falta preencher " + Perfil.oQueFalta(x.l) + ".";
       });
     }
 
@@ -719,7 +722,7 @@
             return;
           }
           var lab = campoTexto(c.rotulo, l[c.k], function (v) { l[c.k] = v; atualizarEstadosLinks(); marcarSujo(); },
-            { ph: c.ph, classe: (c.k === "mensagem" || (campos.length % 2 === 1 && ci === campos.length - 1)) ? "todo" : null });
+            { ph: c.ph, dica: c.dica, classe: (c.k === "mensagem" || (campos.length % 2 === 1 && ci === campos.length - 1)) ? "todo" : null });
           corpo.appendChild(lab);
         });
 
@@ -734,7 +737,9 @@
           } }, [icone("fa-solid fa-trash-can")])
         ]));
         item.appendChild(corpo);
-        itensLinks.push({ l: l, item: item, selo: seloDestaque });
+        var aviso = el("div", { class: "link-aviso", role: "status" }, [icone("fa-solid fa-circle-exclamation"), document.createTextNode("")]);
+        item.appendChild(aviso);
+        itensLinks.push({ l: l, item: item, selo: seloDestaque, aviso: aviso });
         listaLinks.appendChild(item);
         if (l.id === focarId) setTimeout(function () { var f = corpo.querySelector("input"); if (f) { item.scrollIntoView({ behavior: "smooth", block: "center" }); f.focus({ preventScroll: true }); } }, 30);
       });
@@ -750,7 +755,7 @@
 
     form.appendChild(cartao("fa-solid fa-link", "Links", [
       listaLinks,
-      el("div", { class: "dica", style: "margin-top:10px", text: "Os 2 primeiros links da lista aparecem em destaque, como ícones abaixo da descrição. Os demais aparecem como botões, nesta ordem. Use as setas para reordenar. Itens em amarelo estão incompletos e não aparecem." }),
+      el("div", { class: "dica", style: "margin-top:10px", text: "Os 2 primeiros links completos aparecem em destaque, como ícones abaixo da descrição. Os demais aparecem como botões, nesta ordem. Use as setas para reordenar. Links em amarelo estão incompletos: só aparecem na página depois de preenchidos (na prévia, ficam tracejados)." }),
       adicionar
     ]));
 
@@ -765,7 +770,8 @@
       el("div", { class: "grade" }, [
         interruptor("Mostrar \"Salvar contato\"", "mostrarSalvarContato"),
         interruptor("Mostrar \"Compartilhar\"", "mostrarCompartilhar")
-      ])
+      ]),
+      el("div", { class: "dica", style: "margin-top:10px", text: "Ficam no fim da página. Desmarcados, não aparecem." })
     ]));
 
     // --- Cliente e cobrança (interno) --------------------------------------------------
@@ -911,6 +917,7 @@
   function salvar() {
     var ed = estado.ed;
     if (!ed) return Promise.resolve(false);
+    if (ed.salvando) return ed.salvando;               // Ctrl+S repetido: usa o salvamento em andamento
     var btn = $("btnSalvar");
     btn.disabled = true;
     var p = ed.p, patch = {
@@ -920,7 +927,7 @@
     if (p.slug !== ed.orig.slug) patch.slug = p.slug;
     var antigas = [ed.orig.dados.foto, ed.orig.dados.capa];
 
-    return DB.salvar(p.id, patch).then(function (r) {
+    ed.salvando = DB.salvar(p.id, patch).then(function (r) {
       if (estado.ed !== ed) return true;
       // Apaga do armazenamento as imagens que deixaram de ser usadas
       antigas.concat(ed.imagensNovas).forEach(function (u) {
@@ -936,9 +943,10 @@
       toast("Salvo! ✅");
       return true;
     }).catch(function (e) { falhou(e); return false; })
-      .then(function (ok) { btn.disabled = false; return ok; });
+      .then(function (ok) { btn.disabled = false; ed.salvando = null; return ok; });
+    return ed.salvando;
   }
-  $("btnSalvar").addEventListener("click", salvar);
+  $("btnSalvar").addEventListener("click", function () { salvar(); });
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && (estado.ed || estado.cl)) { e.preventDefault(); if (estado.ed) salvar(); else salvarCliente(); }
   });
@@ -1244,6 +1252,7 @@
   function salvarCliente() {
     var cl = estado.cl;
     if (!cl) return Promise.resolve(false);
+    if (cl.salvando) return cl.salvando;               // evita criar o mesmo cliente duas vezes
     try { DB.validarCliente(cl.c); }
     catch (e) {
       toast(e.message, true);
@@ -1254,7 +1263,7 @@
     var btn = $("btnSalvarCliente");
     btn.disabled = true;
     var acao = cl.id ? DB.salvarCliente(cl.id, cl.c) : DB.criarCliente(cl.c);
-    return acao.then(function (r) {
+    cl.salvando = acao.then(function (r) {
       if (estado.cl !== cl) return true;
       var eraNovo = !cl.id;
       cl.id = r.id;
@@ -1274,9 +1283,10 @@
       var f = e.campo && cl.campos[e.campo];
       if (f) { f.classList.add("invalido"); f.focus(); }
       return false;
-    }).then(function (ok) { btn.disabled = false; return ok; });
+    }).then(function (ok) { btn.disabled = false; cl.salvando = null; return ok; });
+    return cl.salvando;
   }
-  $("btnSalvarCliente").addEventListener("click", salvarCliente);
+  $("btnSalvarCliente").addEventListener("click", function () { salvarCliente(); });
 
   // ===========================================================================
   // Início
