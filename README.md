@@ -109,14 +109,24 @@ Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com
 
 **Outro administrador:** no **SQL Editor**, rode `insert into public.admins_autorizados (email) values ('email@exemplo.com');` e depois convide o e-mail em **Users → Invite user**.
 
-## Hospedar (Netlify ou Vercel, grátis)
-- **Netlify:** *Add new site → Import from GitHub* → escolha este repositório → Deploy.
-  O arquivo `_redirects` já faz `seudominio.com/<link>` abrir o perfil certo.
-- **Vercel:** *Add New → Project* → importe o repositório → Deploy. O `vercel.json` já faz o mesmo.
+## Hospedagem (Hostinger: nfcliente.com.br)
 
-Depois, em **Domain settings**, adicione o seu domínio e siga as instruções de DNS do seu registrador (Registro.br, Hostinger etc.).
+O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL Let's Encrypt ativo e redirecionamento para HTTPS.
 
-> GitHub Pages **não** serve aqui: ele não consegue mandar `/<link>` para a página do perfil.
+- **Regras de endereço:** o `.htaccess` faz `nfcliente.com.br/<link>` abrir o perfil e `/admin` abrir o painel. Ele também tira o `www` e bloqueia arquivos que não são do site.
+- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. README, SQL e modelos de e-mail ficam de fora.
+
+### Atualizar o site
+
+1. Gere o pacote de novo e faça commit:
+   ```bash
+   python3 publicar/montar-pacote.py
+   git add -A && git commit -m "Atualiza o site" && git push
+   ```
+2. Na Hostinger, publique o pacote. Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**, envie `nfcliente-site.zip` para `public_html` e extraia.
+   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote, que substitui o conteúdo do site.
+
+> Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
 
 ## Gravar o chaveiro
 1. No painel: **Ativar novo perfil** → configure → **Liberar para o cliente**.
