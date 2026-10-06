@@ -185,7 +185,8 @@ vercel.json           Rotas para a Vercel
 - **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
 - **Bibliotecas de terceiros:** o Supabase e o gerador de QR Code ficam dentro do site, em `js/vendor/`, com a versão no nome do arquivo. Uma versão nova publicada por terceiros nunca entra sozinha. Para atualizar, baixe a nova versão (`npm pack @supabase/supabase-js@X.Y.Z`), troque o arquivo, ajuste o nome nas páginas e em `publicar/montar-pacote.py` e teste.
 - **Nenhum script embutido nas páginas:** todo o JavaScript fica em arquivos `.js`. Assim a CSP pode proibir scripts embutidos, que é o caminho mais comum de um ataque de injeção (XSS).
-- **Página pública sem sessão:** as páginas dos perfis não leem nem guardam o login do painel. Uma falha numa página pública não alcança a sessão do administrador.
+- **Página pública sem sessão:** as páginas dos perfis consultam o banco como visitante, sem usar, renovar ou gravar o login do painel.
+  Isso **não isola** a sessão: o painel e os perfis estão no mesmo endereço (`nfcliente.com.br`) e dividem o armazenamento do navegador. Quem protege a sessão é a CSP, que impede scripts injetados. Para isolar de verdade, o passo seguinte é mover o painel para um subdomínio próprio (por exemplo `admin.nfcliente.com.br`).
 - **Endereço do cliente:** só vai para a página se você marcar a caixa (veja *Clientes*).
 
 ## Próximas ideias
