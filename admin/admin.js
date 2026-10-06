@@ -435,11 +435,17 @@
       var importar = el("input", { type: "checkbox" });
       importar.checked = true;
       var linhaImportar = el("label", { class: "interruptor" }, [importar, "Já colocar na página os contatos e redes do cadastro"]);
+      var endereco = el("input", { type: "checkbox" });
+      endereco.checked = false;
+      var linhaEndereco = el("label", { class: "interruptor" }, [endereco, "Incluir também o endereço (botão \"Como chegar\"). Ele fica público para quem ler o chaveiro"]);
       var erroEl = el("p", { class: "erro" });
       function clienteEscolhido() { return clientes.filter(function (c) { return c.id === sel.value; })[0] || null; }
       function aoTrocarCliente() {
         var c = clienteEscolhido();
         linhaImportar.hidden = !c;
+        // Só oferece o endereço quando o cadastro tem rua e cidade; sempre começa desmarcado
+        linhaEndereco.hidden = !(c && c.logradouro && c.cidade);
+        endereco.checked = false;
         if (c && !nomeManual) { nome.value = c.nome.replace(/\s*\(exemplo\)$/, ""); if (!slugManual) slug.value = DB.gerarSlug(nome.value); }
       }
       sel.addEventListener("change", aoTrocarCliente);
@@ -451,6 +457,7 @@
         el("p", { text: "O perfil começa \"em configuração\". Depois de montar a página, clique em \"Liberar para o cliente\"." }),
         el("label", {}, ["Cliente", sel, el("div", { class: "dica" }, ["Não está na lista? ", el("a", { href: "#/cliente/novo", onclick: function () { m.fechar(); } }, ["Cadastre o cliente primeiro"]), "."])]),
         linhaImportar,
+        linhaEndereco,
         el("label", {}, ["Nome na página", nome]),
         el("label", {}, ["Link do perfil",
           el("div", { class: "link-publico" }, [el("span", { text: DB.urlPerfil("") }), slug]),
@@ -466,7 +473,7 @@
         var carregar = c && importar.checked ? DB.obterCliente(c.id) : Promise.resolve(null);
         carregar.then(function (completo) {
           var dados = { nome: nome.value.trim(), descricao: "", foto: "", capa: "", cor: "#7c3aed", tema: "escuro", links: [], mostrarSalvarContato: true, mostrarCompartilhar: true };
-          if (completo) dados.links = linksDoCliente(completo, []);
+          if (completo) dados.links = linksDoCliente(completo, [], endereco.checked);
           return DB.criar({ slug: slug.value, cliente_id: c ? c.id : null, dados: dados });
         }).then(function (p) {
           m.fechar();
@@ -481,7 +488,8 @@
   }
 
   // Links de página a partir do cadastro do cliente, sem repetir os que já existem.
-  function linksDoCliente(c, existentes) {
+  // O endereço (botão "Como chegar") só entra quando pedido: ele fica público para quem ler o chaveiro.
+  function linksDoCliente(c, existentes, comEndereco) {
     var novos = [], redes = c.redes || {};
     function existe(tipo, campo, valor) {
       return existentes.concat(novos).some(function (l) { return l.tipo === tipo && String(l[campo] || "").replace(/\D/g, "") === String(valor).replace(/\D/g, "") && (campo !== "usuario" || l[campo] === valor); });
@@ -496,7 +504,7 @@
     });
     if (redes.site && !existentes.concat(novos).some(function (l) { return l.tipo === "site" && l.url === redes.site; })) add({ tipo: "site", url: redes.site });
     var endereco = [c.logradouro && (c.logradouro + (c.numero ? ", " + c.numero : "")), c.bairro, c.cidade && (c.cidade + (c.uf ? " - " + c.uf : "")), c.cep].filter(Boolean).join(", ");
-    if (c.logradouro && c.cidade && !existentes.concat(novos).some(function (l) { return l.tipo === "maps"; }))
+    if (comEndereco && c.logradouro && c.cidade && !existentes.concat(novos).some(function (l) { return l.tipo === "maps"; }))
       add({ tipo: "maps", url: "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(endereco) });
     return novos;
   }
@@ -783,14 +791,14 @@
     var btnImportar = el("button", { class: "btn pequeno", type: "button", onclick: function () {
       if (!p.cliente_id) return;
       DB.obterCliente(p.cliente_id).then(function (c) {
-        var novos = c ? linksDoCliente(c, d.links) : [];
+        var novos = c ? linksDoCliente(c, d.links, false) : [];
         if (!novos.length) { toast("A página já tem todos os contatos do cadastro."); return; }
         d.links = d.links.concat(novos);
         desenharLinks();
         marcarSujo();
         toast(novos.length + (novos.length === 1 ? " link adicionado" : " links adicionados") + " no fim da lista.");
       }).catch(falhou);
-    } }, [icone("fa-solid fa-file-import"), " Trazer contatos do cadastro"]);
+    }, title: "Traz WhatsApp, telefone, e-mail, redes e site. O endereço não entra: adicione um link do Google Maps se quiser." }, [icone("fa-solid fa-file-import"), " Trazer contatos do cadastro"]);
     function atualizarCliente() {
       linkCliente.hidden = btnImportar.hidden = !p.cliente_id;
       if (p.cliente_id) linkCliente.setAttribute("href", "#/cliente/" + p.cliente_id);

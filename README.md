@@ -53,7 +53,9 @@ Cada cliente tem um cadastro próprio, separado da página. Um cliente pode ter 
 - **Redes sociais e site.**
 - **Plano, valor e observações.**
 
-Ao criar um perfil para um cliente, a página já nasce com os contatos do cadastro: WhatsApp, e-mail, redes, site e mapa do endereço. No editor, o botão **"Trazer contatos do cadastro"** completa o que faltar.
+Ao criar um perfil para um cliente, a página já nasce com os contatos do cadastro: WhatsApp, e-mail, redes e site. No editor, o botão **"Trazer contatos do cadastro"** completa o que faltar.
+
+O **endereço não entra sozinho**. Num chaveiro perdido ou numa coleira de pet, quem acha teria a chave **e** o endereço da casa. Para colocar o botão "Como chegar", marque **"Incluir também o endereço"** ao criar o perfil. A caixa vem desmarcada e só aparece quando o cadastro tem rua e cidade. Depois, também dá para adicionar um link do Google Maps no editor.
 
 ### Acesso ao painel
 
@@ -90,10 +92,15 @@ Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com
 1. **Authentication → URL Configuration**
    - **Site URL:** o endereço do site, por exemplo `https://nfcliente.com.br`. Enquanto testa no computador, use `http://localhost:3000`.
    - **Redirect URLs:** adicione `https://nfcliente.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
-2. **Authentication → Sign In / Providers → Email**
-   - Desligue **"Allow new users to sign up"**. Ninguém cria conta sozinho; só entra quem você cadastrar.
-   - Mantenha **"Confirm email"** ligado.
-   - Em **"Minimum password length"**, coloque `8`. Em **"Password requirements"**, escolha letras e números.
+2. **Authentication → Sign In / Providers**
+   - Em **User Signups**:
+     - desligue **"Allow new users to sign up"**. Ninguém cria conta sozinho; só entra quem você cadastrar;
+     - desligue **"Allow anonymous sign-ins"**;
+     - mantenha **"Confirm email"** ligado.
+   - Em **Email**:
+     - ligue **"Secure password change"** e **"Secure email change"**;
+     - em **"Minimum password length"**, coloque `8`;
+     - em **"Password requirements"**, escolha letras e números.
 3. **Authentication → Emails → Templates.** Para cada modelo, copie o assunto, que está na 1ª linha do arquivo, e cole o conteúdo do arquivo:
 
    | Modelo | Arquivo |
@@ -114,6 +121,11 @@ Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com
 O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL Let's Encrypt ativo e redirecionamento para HTTPS.
 
 - **Regras de endereço:** o `.htaccess` faz `nfcliente.com.br/<link>` abrir o perfil e `/admin` abrir o painel. Ele também tira o `www` e bloqueia arquivos que não são do site.
+- **Cabeçalhos de segurança:** o `.htaccess` também envia:
+  - **HSTS:** o navegador passa a usar sempre HTTPS;
+  - **CSP:** a lista de onde o site pode carregar scripts, estilos, fotos e conexões.
+  
+  Se um dia o site precisar de outro serviço externo (por exemplo, fotos de outro endereço ou um script de estatísticas), inclua esse endereço na linha `Content-Security-Policy`. Sem isso, o navegador bloqueia.
 - **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. README, SQL e modelos de e-mail ficam de fora.
 
 ### Atualizar o site
@@ -124,7 +136,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
    git add -A && git commit -m "Atualiza o site" && git push
    ```
 2. Na Hostinger, publique o pacote. Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**, envie `nfcliente-site.zip` para `public_html` e extraia.
-   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote, que substitui o conteúdo do site.
+   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote, que substitui o conteúdo do site. Como o repositório é privado, a Hostinger precisa de uma **chave de implantação** (*deploy key*) cadastrada no GitHub, em *Settings → Deploy keys*, só com leitura.
 
 > Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
 
@@ -139,7 +151,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 
 ## Backup
 
-Cada backup é uma tag `backup-AAAA-MM-DD` no GitHub, com código e documentação. Para restaurar, siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md). Os dados de clientes **não** ficam aqui, porque o repositório é público; o guia explica como guardá-los à parte.
+Cada backup é uma tag `backup-AAAA-MM-DD` no GitHub, com código e documentação. Para restaurar, siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md). Os dados de clientes **não** ficam aqui; o guia explica como guardá-los à parte. O repositório é privado, mas dados pessoais de clientes continuam fora do Git.
 
 ## Estrutura dos arquivos
 
@@ -148,10 +160,12 @@ index.html            Página inicial do domínio (sua vitrine; personalize)
 perfil.html           Página pública de cada perfil (/<link>)
 admin/                Painel com login
   index.html, admin.js, admin.css
-  redefinir-senha.html  Página do link "Esqueci minha senha" e do convite
+  redefinir-senha.html, redefinir-senha.js  Página do link "Esqueci minha senha" e do convite
 js/config.js          Endereço do Supabase, chave pública e domínio
 js/db.js              Acesso ao banco (Supabase ou modo demonstração)
 js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
+js/pagina-perfil.js   Carrega o perfil pelo link e mostra os avisos (fora do ar, não encontrado)
+js/vendor/            Bibliotecas de terceiros com versão fixa (Supabase e QR Code) e suas licenças
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
@@ -169,6 +183,10 @@ vercel.json           Rotas para a Vercel
 - **Se o Supabase não carregar** (falha de internet ou bloqueador), o painel mostra um erro. Ele nunca cai no modo demonstração, que aceitaria qualquer senha.
 - **Sessão:** o painel confere se a conta é administradora ao entrar e ao reabrir. Se não for, desconecta.
 - **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
+- **Bibliotecas de terceiros:** o Supabase e o gerador de QR Code ficam dentro do site, em `js/vendor/`, com a versão no nome do arquivo. Uma versão nova publicada por terceiros nunca entra sozinha. Para atualizar, baixe a nova versão (`npm pack @supabase/supabase-js@X.Y.Z`), troque o arquivo, ajuste o nome nas páginas e em `publicar/montar-pacote.py` e teste.
+- **Nenhum script embutido nas páginas:** todo o JavaScript fica em arquivos `.js`. Assim a CSP pode proibir scripts embutidos, que é o caminho mais comum de um ataque de injeção (XSS).
+- **Página pública sem sessão:** as páginas dos perfis não leem nem guardam o login do painel. Uma falha numa página pública não alcança a sessão do administrador.
+- **Endereço do cliente:** só vai para a página se você marcar a caixa (veja *Clientes*).
 
 ## Próximas ideias
 

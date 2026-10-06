@@ -431,8 +431,12 @@
   // Supabase
   // ===========================================================================
   function criarSupabase() {
+    // Páginas públicas (perfil.html) não usam login: não leem nem guardam a sessão do administrador.
+    var publica = document.body && document.body.getAttribute("data-pagina") === "publica";
     var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      auth: publica
+        ? { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        : { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
     var SELECT_PERFIL = "*, cliente:clientes(" + CAMPOS_CLIENTE_RESUMO + ")";
 

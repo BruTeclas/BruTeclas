@@ -3,7 +3,7 @@
 Cada backup é uma **tag** no GitHub, por exemplo `backup-2026-10-06`. Ela guarda o código e a documentação exatamente como estavam naquele dia.
 
 > **O que a tag NÃO guarda:** os dados do banco (clientes, perfis, fotos) e as configurações dos painéis do Supabase e da Hostinger.
-> Os dados de clientes têm CPF, telefone e endereço. **Nunca** os coloque neste repositório, porque ele é público.
+> Os dados de clientes têm CPF, telefone e endereço. **Nunca** os coloque neste repositório. Ele é privado, mas um backup de código não é lugar para dados pessoais.
 > Para os dados, use o backup do próprio Supabase (plano Pro) ou exporte as tabelas `clientes` e `perfis` em CSV pelo *Table Editor* e guarde em local privado.
 
 ## 1. Baixar o código da tag
@@ -21,8 +21,9 @@ git checkout backup-AAAA-MM-DD
 1. Crie um projeto novo no Supabase.
 2. **SQL Editor:** cole e rode [`supabase/schema.sql`](../supabase/schema.sql). Isso recria tabelas, regras de acesso, funções, o gatilho de administrador e o bucket de imagens.
 3. Autorize o seu e-mail com a primeira linha comentada no fim do `schema.sql` e crie o usuário em *Authentication → Users → Add user*.
-4. Refaça as configurações do painel, conforme a seção "Supabase: o que falta" do [README](../README.md): cadastro público desligado, URL do site, modelos de e-mail.
+4. Refaça as configurações do painel, conforme a seção "Supabase: o que falta" do [README](../README.md): cadastro público e anônimo desligados, "Secure password change" ligado, URL do site, modelos de e-mail.
 5. Atualize `supabaseUrl` e `supabaseAnonKey` em `js/config.js`, com a chave **publicável** do projeto novo.
+   Troque também o endereço antigo do Supabase (`vomhyqdvxhkovykipxpg.supabase.co`) pelo novo na linha `Content-Security-Policy` do `.htaccess`. Sem isso, o navegador bloqueia o login e as fotos.
 6. Importe os CSVs de `clientes` e `perfis`, se tiver.
 
 ## 3. Publicar o site na Hostinger
