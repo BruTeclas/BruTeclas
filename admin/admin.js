@@ -440,15 +440,21 @@
       var linhaEndereco = el("label", { class: "interruptor" }, [endereco, "Incluir também o endereço (botão \"Como chegar\"). Ele fica público para quem ler o chaveiro"]);
       var erroEl = el("p", { class: "erro" });
       function clienteEscolhido() { return clientes.filter(function (c) { return c.id === sel.value; })[0] || null; }
+      // O endereço só é oferecido junto com os contatos e quando o cadastro tem rua e cidade
+      function atualizarEndereco() {
+        var c = clienteEscolhido();
+        linhaEndereco.hidden = !(importar.checked && c && c.logradouro && c.cidade);
+        if (linhaEndereco.hidden) endereco.checked = false;
+      }
       function aoTrocarCliente() {
         var c = clienteEscolhido();
         linhaImportar.hidden = !c;
-        // Só oferece o endereço quando o cadastro tem rua e cidade; sempre começa desmarcado
-        linhaEndereco.hidden = !(c && c.logradouro && c.cidade);
-        endereco.checked = false;
+        endereco.checked = false;   // sempre começa desmarcado
+        atualizarEndereco();
         if (c && !nomeManual) { nome.value = c.nome.replace(/\s*\(exemplo\)$/, ""); if (!slugManual) slug.value = DB.gerarSlug(nome.value); }
       }
       sel.addEventListener("change", aoTrocarCliente);
+      importar.addEventListener("change", atualizarEndereco);
       nome.addEventListener("input", function () { nomeManual = true; if (!slugManual) slug.value = DB.gerarSlug(nome.value); });
       slug.addEventListener("input", function () { slugManual = true; slug.value = slug.value.toLowerCase().replace(/[^a-z0-9-]/g, ""); });
       var btn = el("button", { class: "btn primario", type: "submit" }, [icone("fa-solid fa-plus"), " Criar e configurar"]);

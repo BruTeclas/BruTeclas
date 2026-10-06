@@ -55,7 +55,7 @@ Cada cliente tem um cadastro próprio, separado da página. Um cliente pode ter 
 
 Ao criar um perfil para um cliente, a página já nasce com os contatos do cadastro: WhatsApp, e-mail, redes e site. No editor, o botão **"Trazer contatos do cadastro"** completa o que faltar.
 
-O **endereço não entra sozinho**. Num chaveiro perdido ou numa coleira de pet, quem acha teria a chave **e** o endereço da casa. Para colocar o botão "Como chegar", marque **"Incluir também o endereço"** ao criar o perfil. A caixa vem desmarcada e só aparece quando o cadastro tem rua e cidade. Depois, também dá para adicionar um link do Google Maps no editor.
+O **endereço não entra sozinho**. Num chaveiro perdido ou numa coleira de pet, quem acha teria a chave **e** o endereço da casa. Para colocar o botão "Como chegar", marque **"Incluir também o endereço"** ao criar o perfil. A caixa vem desmarcada e só aparece quando o cadastro tem rua e cidade e "Já colocar na página os contatos" está marcada. Depois, também dá para adicionar um link do Google Maps no editor.
 
 ### Acesso ao painel
 
