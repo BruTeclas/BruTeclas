@@ -33,7 +33,7 @@ AddDefaultCharset utf-8
 <IfModule mod_headers.c>
   # Só HTTPS por 1 ano, mesmo se alguém digitar http:// (protege o login em Wi-Fi público)
   Header always set Strict-Transport-Security "max-age=31536000"
-  # Lista do que o navegador pode carregar: scripts só deste site (bibliotecas em /js/vendor, versão fixa);
+  # Lista do que o navegador pode carregar: scripts só deste site (bibliotecas em /js/lib, versão fixa);
   # dados só do Supabase do projeto e da busca de CEP; estilos e fontes do Google Fonts e do Font Awesome.
   Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://vomhyqdvxhkovykipxpg.supabase.co; connect-src 'self' https://vomhyqdvxhkovykipxpg.supabase.co https://viacep.com.br; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
   Header always set X-Content-Type-Options "nosniff"

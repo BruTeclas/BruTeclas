@@ -165,7 +165,7 @@ js/config.js          Endereço do Supabase, chave pública e domínio
 js/db.js              Acesso ao banco (Supabase ou modo demonstração)
 js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
 js/pagina-perfil.js   Carrega o perfil pelo link e mostra os avisos (fora do ar, não encontrado)
-js/vendor/            Bibliotecas de terceiros com versão fixa (Supabase e QR Code) e suas licenças
+js/lib/               Bibliotecas de terceiros com versão fixa (Supabase e QR Code) e suas licenças
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
@@ -183,7 +183,7 @@ vercel.json           Rotas para a Vercel
 - **Se o Supabase não carregar** (falha de internet ou bloqueador), o painel mostra um erro. Ele nunca cai no modo demonstração, que aceitaria qualquer senha.
 - **Sessão:** o painel confere se a conta é administradora ao entrar e ao reabrir. Se não for, desconecta.
 - **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
-- **Bibliotecas de terceiros:** o Supabase e o gerador de QR Code ficam dentro do site, em `js/vendor/`, com a versão no nome do arquivo. Uma versão nova publicada por terceiros nunca entra sozinha. Para atualizar, baixe a nova versão (`npm pack @supabase/supabase-js@X.Y.Z`), troque o arquivo, ajuste o nome nas páginas e em `publicar/montar-pacote.py` e teste.
+- **Bibliotecas de terceiros:** o Supabase e o gerador de QR Code ficam dentro do site, em `js/lib/`, com a versão no nome do arquivo. Uma versão nova publicada por terceiros nunca entra sozinha. Para atualizar, baixe a nova versão (`npm pack @supabase/supabase-js@X.Y.Z`), troque o arquivo, ajuste o nome nas páginas e em `publicar/montar-pacote.py` e teste. A pasta não pode se chamar `vendor`: a publicação da Hostinger descarta pastas com esse nome.
 - **Nenhum script embutido nas páginas:** todo o JavaScript fica em arquivos `.js`. Assim a CSP pode proibir scripts embutidos, que é o caminho mais comum de um ataque de injeção (XSS).
 - **Página pública sem sessão:** as páginas dos perfis consultam o banco como visitante, sem usar, renovar ou gravar o login do painel.
   Isso **não isola** a sessão: o painel e os perfis estão no mesmo endereço (`nfcliente.com.br`) e dividem o armazenamento do navegador. Quem protege a sessão é a CSP, que impede scripts injetados. Para isolar de verdade, o passo seguinte é mover o painel para um subdomínio próprio (por exemplo `admin.nfcliente.com.br`).
