@@ -137,6 +137,10 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 > ⚠️ Use chaveiros **NFC NTAG213, 215 ou 216 (13,56 MHz)**. Chaveiros RFID de **125 kHz**, de portaria,
 > **não** são lidos por celular.
 
+## Backup
+
+Cada backup é uma tag `backup-AAAA-MM-DD` no GitHub, com código e documentação. Para restaurar, siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md). Os dados de clientes **não** ficam aqui, porque o repositório é público; o guia explica como guardá-los à parte.
+
 ## Estrutura dos arquivos
 
 ```
@@ -151,6 +155,8 @@ js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
+docs/RESTAURAR.md     Como restaurar tudo a partir de uma tag de backup
+publicar/             Pacote do site para a Hostinger e o script que o gera
 _redirects            Rotas para o Netlify
 vercel.json           Rotas para a Vercel
 ```
