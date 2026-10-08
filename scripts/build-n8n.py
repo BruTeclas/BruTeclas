@@ -264,9 +264,9 @@ def sheets_node(name, pos, values):
         "parameters": {
             "operation": "appendOrUpdate",
             "documentId": {"__rl": True, "value": PLANILHA_ID, "mode": "id"},
-            "sheetName": {"__rl": True, "value": "gid=0", "mode": "list",
+            "sheetName": {"__rl": True, "value": "gid=1078546648", "mode": "list",
                           "cachedResultName": "Inscrições",
-                          "cachedResultUrl": PLANILHA_URL + "#gid=0"},
+                          "cachedResultUrl": PLANILHA_URL + "#gid=1078546648"},
             "columns": {
                 "mappingMode": "defineBelow",
                 "value": values,

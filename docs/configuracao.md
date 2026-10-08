@@ -28,13 +28,15 @@ Depois de mudar o site, rode `python3 scripts/build-site.py` e publique de novo.
 
 ## Publicar o site no Coolify (VPS)
 
-O DNS de `beholdmovement.com.br` já aponta para o VPS (147.93.68.18).
+O DNS de `beholdmovement.com.br` já aponta para o VPS (147.93.68.18), e o repositório no GitHub é público.
 
-1. No Coolify, abra um projeto e clique em **+ New**, depois em **Dockerfile**.
-2. Cole o conteúdo inteiro de `deploy/coolify.Dockerfile` e continue.
-3. Em **Domains**, coloque `https://beholdmovement.com.br,https://www.beholdmovement.com.br`.
-4. Em **Ports Exposes**, deixe `80`.
-5. Clique em **Deploy**. O Coolify gera o certificado HTTPS sozinho.
+1. No Coolify, abra um projeto e clique em **+ New**, depois em **Public Repository**.
+2. Repositório: `https://github.com/BruTeclas/BruTeclas`, branch `claude/behold-movement-sketch-x7qf9h`.
+3. Em **Build Pack**, escolha **Dockerfile** (o `Dockerfile` da raiz).
+4. Em **Domains**, coloque `https://beholdmovement.com.br,https://www.beholdmovement.com.br`; em **Ports Exposes**, `80`.
+5. Clique em **Deploy**. O Coolify gera o certificado HTTPS sozinho. Para atualizar o site depois, basta clicar em **Redeploy** (ou ligar o deploy automático).
+
+Sem Git: em vez dos passos 1 a 3, escolha **+ New > Dockerfile** e cole o conteúdo de `deploy/coolify.Dockerfile`.
 
 ## Configurar o n8n
 
@@ -47,7 +49,7 @@ O DNS de `beholdmovement.com.br` já aponta para o VPS (147.93.68.18).
    - *Google Sheets*: conta Google com acesso à planilha. A planilha é de bru.teclas@gmail.com; compartilhe com o Gmail do movimento como Editor se for usar essa conta.
    - *Gmail*: o Gmail novo do movimento, que é o remetente dos e-mails.
    - *Chatwoot API*: tipo **Header Auth**, nome `api_access_token`, valor = token de acesso do seu perfil no Chatwoot.
-4. Nos nós **Salvar na planilha** e **Atualizar status na planilha**, confira se a aba escolhida é **Inscrições**. A aba precisa ter exatamente estas colunas, nesta ordem: ID, Data/hora, Nome, Telefone, E-mail, CEP, Endereço, Bairro, Cidade, Estado, Igreja, Ministério, Consentimento, Status e-mail, Status WhatsApp, Conversa Chatwoot, Observações (veja `scripts/build-planilha.py`).
+4. Nos nós **Salvar na planilha** e **Atualizar status na planilha**, confira se a aba escolhida é **Inscrições** (ID interno 1078546648). A planilha já está com as colunas certas, nesta ordem: ID, Data/hora, Nome, Telefone, E-mail, CEP, Endereço, Bairro, Cidade, Estado, Igreja, Ministério, Consentimento, Status e-mail, Status WhatsApp, Conversa Chatwoot, Observações (veja `scripts/build-planilha.py`).
 5. Ative o workflow e faça uma inscrição de teste com o seu próprio número.
 
 ## Cuidados com o WhatsApp (API não oficial)

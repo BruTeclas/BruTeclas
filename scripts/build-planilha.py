@@ -93,6 +93,21 @@ def resumo_celulas() -> dict[str, tuple[str, str]]:
     return c
 
 
+def para_ptbr(formula: str) -> str:
+    """Troca a vírgula entre argumentos por ponto e vírgula (planilha em pt_BR).
+
+    Pela API, a planilha interpreta as fórmulas no idioma dela; em pt_BR os
+    argumentos são separados por ';'. Vírgulas dentro de aspas (como no texto do
+    QUERY) ficam como estão.
+    """
+    out, aspas = [], False
+    for ch in formula:
+        if ch == '"':
+            aspas = not aspas
+        out.append(";" if ch == "," and not aspas else ch)
+    return "".join(out)
+
+
 def build(out: Path) -> None:
     wb = Workbook()
     head_font = Font(name=FONT, bold=True, color="FFFFFF")
