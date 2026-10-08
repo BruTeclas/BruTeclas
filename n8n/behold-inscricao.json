@@ -1,0 +1,1005 @@
+{
+  "name": "Behold Movement · Inscrições",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Inscrições Behold Movement\nAntes de ativar:\n1. **Configurações**: preencha o ID da caixa de entrada do WhatsApp no Chatwoot e o link do grupo.\n2. **Credenciais**: Google Sheets e Gmail com a conta do movimento; *Chatwoot API* como Header Auth (nome `api_access_token`, valor = token do seu perfil no Chatwoot).\n3. Nos dois nós da planilha, confira se a aba selecionada é **Inscrições**.\n4. Ative o workflow. O site envia para `/webhook/behold-inscricao`.",
+        "height": 300,
+        "width": 420,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -340
+      ],
+      "id": "8904416a-16bc-52c9-94b3-c58b4f2f1ed1",
+      "name": "Como configurar"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "behold-inscricao",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://beholdmovement.com.br,https://www.beholdmovement.com.br"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        0
+      ],
+      "id": "40c92389-6c0d-5ad6-9ee8-1c1787778d54",
+      "name": "Inscrição no site",
+      "webhookId": "9b5c3054-0238-57eb-985c-f821dc8f82b0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "83b0bccd-69e8-5694-9bbf-26d91230ac31",
+              "name": "chatwoot_url",
+              "value": "https://chatwoot.frontia.com.br",
+              "type": "string"
+            },
+            {
+              "id": "fd7fb6cc-d9da-59df-afa0-0a1b7e89f659",
+              "name": "chatwoot_account_id",
+              "value": "1",
+              "type": "string"
+            },
+            {
+              "id": "89ddc6d3-89f7-5263-a1c1-56bbde438228",
+              "name": "chatwoot_inbox_id",
+              "value": "PREENCHER",
+              "type": "string"
+            },
+            {
+              "id": "c1928104-a66a-578a-b7d2-ec17a3552934",
+              "name": "link_grupo",
+              "value": "https://chat.whatsapp.com/PREENCHER",
+              "type": "string"
+            },
+            {
+              "id": "d20346e9-fdd5-5bc2-8755-324cf35addef",
+              "name": "remetente_nome",
+              "value": "Behold Movement",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        0
+      ],
+      "id": "0b470dc0-7a90-57b7-a275-408d4d398ab4",
+      "name": "Configurações"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lê o formulário do site, padroniza os campos e diz se a inscrição é válida.\nconst cfg = $('Configurações').first().json;\nconst b = $('Inscrição no site').first().json.body || {};\n\nconst limpa = (v) => String(v ?? '').trim().replace(/\\s+/g, ' ');\nconst MINUSCULAS = ['da', 'de', 'do', 'das', 'dos', 'e'];\nconst capitaliza = (s) => limpa(s).toLowerCase().split(' ')\n  .map((p, i) => (i > 0 && MINUSCULAS.includes(p)) ? p : p.charAt(0).toUpperCase() + p.slice(1))\n  .join(' ');\n\nlet digitos = limpa(b.telefone_e164 || b.telefone).replace(/\\D/g, '');\nif (digitos.startsWith('55') && digitos.length >= 12) digitos = digitos.slice(2);\n\nconst MINISTERIOS = ['Evangelizando', 'Liderando grupos', 'Mídia', 'Louvor', 'Suprimento', 'Ação social', 'Intercessão'];\n\nconst dados = {\n  nome: capitaliza(b.nome),\n  email: limpa(b.email).toLowerCase(),\n  endereco: limpa(b.endereco),\n  bairro: capitaliza(b.bairro),\n  cidade: limpa(b.cidade),\n  igreja: limpa(b.igreja),\n  ministerio: limpa(b.ministerio),\n  consentimento: limpa(b.consentimento) === 'sim' ? 'sim' : 'não',\n};\n\nconst erros = [];\nif (dados.nome.length < 3) erros.push('nome');\nif (!(digitos.length === 11 && digitos.charAt(2) === '9')) erros.push('telefone');\nif (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(dados.email)) erros.push('email');\nfor (const campo of ['endereco', 'bairro', 'cidade', 'igreja']) {\n  if (!dados[campo]) erros.push(campo);\n}\nif (!MINISTERIOS.includes(dados.ministerio)) erros.push('ministerio');\nif (dados.consentimento !== 'sim') erros.push('consentimento');\n\n// Campo escondido \"site\": pessoas não veem, robôs preenchem.\nconst bot = limpa(b.site) !== '';\n\nconst agora = DateTime.now().setZone('America/Sao_Paulo');\nreturn [{\n  json: {\n    valido: !bot && erros.length === 0,\n    bot,\n    erros,\n    id: 'BHD-' + agora.toFormat('yyMMdd') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(),\n    data_hora: agora.toFormat('yyyy-MM-dd HH:mm:ss'),\n    ...dados,\n    primeiro_nome: dados.nome.split(' ')[0] || '',\n    telefone_e164: '+55' + digitos,\n    ...cfg,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        0
+      ],
+      "id": "e8ece23f-7369-5450-aeae-bcaa9e04160b",
+      "name": "Validar e padronizar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "86c92c00-82fc-581b-9b30-6617b8e1c3a9",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        200,
+        0
+      ],
+      "id": "7c9f9d8b-5772-5d0d-88c1-11d78f13a4bd",
+      "name": "Inscrição válida?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: $json.bot, erros: $json.bot ? [] : $json.erros } }}",
+        "options": {
+          "responseCode": "={{ $json.bot ? 200 : 400 }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        420,
+        200
+      ],
+      "id": "12124057-805d-5296-80a4-413992814dbe",
+      "name": "Responder: dados inválidos"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1q1x8UUi4KOTB6ES8HToqCWhA9uCCkvchnFlU1ZWn8jE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inscrições",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1q1x8UUi4KOTB6ES8HToqCWhA9uCCkvchnFlU1ZWn8jE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Validar e padronizar').first().json.id }}",
+            "Data/hora": "={{ $('Validar e padronizar').first().json.data_hora }}",
+            "Nome": "={{ $('Validar e padronizar').first().json.nome }}",
+            "Telefone": "={{ $('Validar e padronizar').first().json.telefone_e164 }}",
+            "E-mail": "={{ $('Validar e padronizar').first().json.email }}",
+            "Endereço": "={{ $('Validar e padronizar').first().json.endereco }}",
+            "Bairro": "={{ $('Validar e padronizar').first().json.bairro }}",
+            "Cidade": "={{ $('Validar e padronizar').first().json.cidade }}",
+            "Igreja": "={{ $('Validar e padronizar').first().json.igreja }}",
+            "Ministério": "={{ $('Validar e padronizar').first().json.ministerio }}",
+            "Consentimento": "={{ $('Validar e padronizar').first().json.consentimento }}",
+            "Status e-mail": "pendente",
+            "Status WhatsApp": "pendente"
+          },
+          "matchingColumns": [
+            "Telefone"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data/hora",
+              "displayName": "Data/hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Telefone",
+              "displayName": "Telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "E-mail",
+              "displayName": "E-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Endereço",
+              "displayName": "Endereço",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bairro",
+              "displayName": "Bairro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cidade",
+              "displayName": "Cidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Igreja",
+              "displayName": "Igreja",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ministério",
+              "displayName": "Ministério",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Consentimento",
+              "displayName": "Consentimento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status e-mail",
+              "displayName": "Status e-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status WhatsApp",
+              "displayName": "Status WhatsApp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Conversa Chatwoot",
+              "displayName": "Conversa Chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Observações",
+              "displayName": "Observações",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        420,
+        -20
+      ],
+      "id": "6b491b65-e126-50aa-992c-002da25f0639",
+      "name": "Salvar na planilha",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets (conta do movimento)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, id: $('Validar e padronizar').first().json.id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        -20
+      ],
+      "id": "fa84ce15-8822-565d-96cc-b9ae947ba572",
+      "name": "Responder: inscrição recebida"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta o e-mail (HTML) e a mensagem de WhatsApp a partir da inscrição.\nconst d = $('Validar e padronizar').first().json;\n\nconst esc = (s) => String(s ?? '').replace(/[&<>\"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;' }[c]));\nconst lider = d.ministerio === 'Liderando grupos';\nconst etiqueta = 'frente-' + d.ministerio.normalize('NFD').replace(/[̀-ͯ]/g, '')\n  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');\n\n// ---------- WhatsApp\nconst linhas = [\n  `Olá, ${d.primeiro_nome}!`,\n  '',\n  `Aqui é do *Behold Movement*. Recebemos sua inscrição para servir na frente de *${d.ministerio}*. Que alegria ter você com a gente!`,\n  '',\n  'Entre no grupo do movimento para receber as notícias e as orientações do Dia 31:',\n  d.link_grupo,\n];\nif (lider) {\n  linhas.push('', 'Como você vai liderar um grupo, participe do treinamento antes da ação. A data, o horário e o local serão avisados no grupo.');\n}\nlinhas.push(\n  '',\n  'Salve este número nos seus contatos para não perder nenhuma mensagem. Se tiver dúvida, é só responder aqui.',\n  '',\n  '_Contemple Cristo e faça Cristo ser contemplado._',\n);\n\n// ---------- E-mail\nconst AZUL = '#1f5bf2', TINTA = '#16171c', PAPEL = '#eceae5', CINZA = '#5d616c';\nconst DISPLAY = \"Impact, 'Arial Narrow Bold', 'Arial Narrow', Arial, sans-serif\";\nconst TEXTO = 'Arial, Helvetica, sans-serif';\nconst MONO = \"'Courier New', Courier, monospace\";\n\nconst agenda = [\n  ['12h00', 'Encontro no Arena'],\n  ['12h00 às 14h00', 'Evangelismo'],\n  ['14h00', 'Retorno ao ponto de encontro'],\n  ['14h30', 'Almoço na ASAFE'],\n  ['16h00', 'Intercessão e oração'],\n  ['17h00', 'Preparação final'],\n  ['18h00', 'Culto Evangelístico'],\n].map(([h, o]) => `\n  <tr>\n    <td width=\"150\" style=\"width:150px;padding:10px 16px 10px 0;border-top:1px solid #d6d3cc;font-family:${DISPLAY};font-size:18px;color:${AZUL};white-space:nowrap;vertical-align:top;\">${h}</td>\n    <td style=\"padding:10px 0;border-top:1px solid #d6d3cc;font-family:${TEXTO};font-size:16px;color:${TINTA};\">${o}</td>\n  </tr>`).join('');\n\nconst blocoLider = lider ? `\n  <tr><td style=\"padding:0 32px 24px;\">\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border:2px solid ${AZUL};border-radius:6px;\">\n      <tr><td style=\"padding:16px 18px;font-family:${TEXTO};font-size:15px;line-height:1.5;color:${TINTA};\">\n        <strong>Treinamento para líderes.</strong> Quem vai liderar um grupo precisa participar do treinamento antes da ação. A data, o horário e o local serão avisados no grupo.\n      </td></tr>\n    </table>\n  </td></tr>` : '';\n\nconst html = `<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Behold Movement</title></head>\n<body style=\"margin:0;padding:0;background:${PAPEL};\">\n<div style=\"display:none;max-height:0;overflow:hidden;\">Sua inscrição foi recebida. Entre no grupo do movimento para receber as notícias.</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:${PAPEL};\">\n<tr><td align=\"center\" style=\"padding:24px 12px;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:600px;background:#ffffff;border-radius:6px;overflow:hidden;\">\n\n  <tr><td style=\"background:${AZUL};padding:32px 32px 28px;\">\n    <div style=\"font-family:${DISPLAY};font-size:40px;line-height:1;color:${PAPEL};letter-spacing:1px;\">MOVEMENT</div>\n    <div style=\"font-family:${DISPLAY};font-size:76px;line-height:.9;color:${TINTA};letter-spacing:1px;\">BEHOLD</div>\n    <div style=\"font-family:${MONO};font-size:13px;color:${PAPEL};margin-top:18px;\">\"Eis o Cordeiro de Deus, que tira o pecado do mundo.\" João 1:29</div>\n  </td></tr>\n\n  <tr><td style=\"padding:32px 32px 8px;\">\n    <div style=\"font-family:${MONO};font-weight:bold;font-size:12px;letter-spacing:3px;color:${AZUL};\">INSCRIÇÃO CONFIRMADA</div>\n    <h1 style=\"margin:10px 0 16px;font-family:${DISPLAY};font-weight:normal;font-size:34px;line-height:1.05;color:${TINTA};text-transform:uppercase;\">Que bom ter você com a gente, ${esc(d.primeiro_nome)}.</h1>\n    <p style=\"margin:0 0 16px;font-family:${TEXTO};font-size:16px;line-height:1.6;color:${TINTA};\">Sua inscrição no Behold Movement foi recebida. Você escolheu servir na frente de <strong>${esc(d.ministerio)}</strong>.</p>\n    <p style=\"margin:0 0 24px;font-family:${TEXTO};font-size:16px;line-height:1.6;color:${TINTA};\">As notícias, os avisos e as orientações do movimento são compartilhados no grupo do WhatsApp. Entre agora para não perder nada.</p>\n  </td></tr>\n\n  <tr><td style=\"padding:0 32px 28px;\">\n    <a href=\"${esc(d.link_grupo)}\" style=\"display:inline-block;background:${AZUL};color:#ffffff;text-decoration:none;font-family:${DISPLAY};font-size:20px;letter-spacing:1px;padding:16px 26px;border-radius:4px;text-transform:uppercase;\">Entrar no grupo do WhatsApp</a>\n  </td></tr>\n  ${blocoLider}\n\n  <tr><td style=\"padding:8px 32px 28px;\">\n    <div style=\"font-family:${MONO};font-weight:bold;font-size:12px;letter-spacing:3px;color:${AZUL};margin-bottom:8px;\">COMO SERÁ O DIA 31</div>\n    <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">${agenda}\n    </table>\n  </td></tr>\n\n  <tr><td style=\"background:${TINTA};padding:28px 32px;\">\n    <div style=\"font-family:${DISPLAY};font-size:26px;line-height:1.1;color:${PAPEL};text-transform:uppercase;\">\"Ide por todo o mundo e pregai o evangelho <span style=\"color:#6e97ff;\">a toda criatura.\"</span></div>\n    <div style=\"font-family:${MONO};font-weight:bold;font-size:13px;color:#6e97ff;margin-top:10px;\">MARCOS 16:15</div>\n  </td></tr>\n\n  <tr><td style=\"padding:20px 32px 28px;font-family:${TEXTO};font-size:12px;line-height:1.6;color:${CINZA};\">\n    <strong style=\"color:${TINTA};\">Behold Movement</strong> · Contemple Cristo<br>\n    Você recebeu este e-mail porque se inscreveu em beholdmovement.com.br. Para sair da lista, responda este e-mail pedindo a remoção.\n  </td></tr>\n\n</table>\n</td></tr>\n</table>\n</body></html>`;\n\nreturn [{\n  json: {\n    ...d,\n    email_assunto: `Boas-vindas ao Behold Movement, ${d.primeiro_nome}!`,\n    email_html: html,\n    whatsapp_texto: linhas.join('\\n'),\n    etiquetas: ['behold-movement', etiqueta],\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        -20
+      ],
+      "id": "3b499f73-d24d-5979-8a77-e417afe448f2",
+      "name": "Montar mensagens"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.email_assunto }}",
+        "emailType": "html",
+        "message": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $json.remetente_nome }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1080,
+        -20
+      ],
+      "id": "2720e861-39a5-52e2-8285-23705f81dbcd",
+      "name": "Enviar e-mail de boas-vindas",
+      "webhookId": "d563a974-b43a-5f78-82e7-4ca19b208533",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail (conta do movimento)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ 15 + Math.floor(Math.random() * 45) }}",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        -20
+      ],
+      "id": "56f361cc-263f-5f3d-90ee-1837b8104566",
+      "name": "Aguardar antes do WhatsApp",
+      "webhookId": "81db52b2-6eda-54a5-9e8f-771dd68bd247"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Montar mensagens').first().json.chatwoot_url }}/api/v1/accounts/{{ $('Montar mensagens').first().json.chatwoot_account_id }}/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Montar mensagens').first().json.telefone_e164.replace('+', '') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        -20
+      ],
+      "id": "769a331c-05a6-5420-a666-66f777c04fb6",
+      "name": "Chatwoot: buscar contato",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procura, no resultado da busca do Chatwoot, o contato com o mesmo telefone.\nconst m = $('Montar mensagens').first().json;\nconst r = $input.first().json;\nconst lista = Array.isArray(r.payload) ? r.payload : [];\nconst digitos = (s) => String(s || '').replace(/\\D/g, '');\nconst achado = lista.find((c) => digitos(c.phone_number) === digitos(m.telefone_e164));\nreturn [{ json: { contact_id: achado ? achado.id : null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        -20
+      ],
+      "id": "aa31e6fa-3093-54ee-8fa6-278e1e3e14a3",
+      "name": "Escolher contato"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "9a988ee7-820f-513c-a4d5-7cabd7046a33",
+              "leftValue": "={{ !!$json.contact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        -20
+      ],
+      "id": "8633461e-1f03-5a8f-8fcd-24b17a5e930d",
+      "name": "Contato já existe?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar mensagens').first().json.chatwoot_url }}/api/v1/accounts/{{ $('Montar mensagens').first().json.chatwoot_account_id }}/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inbox_id: Number($('Montar mensagens').first().json.chatwoot_inbox_id), name: $('Montar mensagens').first().json.nome, phone_number: $('Montar mensagens').first().json.telefone_e164, additional_attributes: { city: $('Montar mensagens').first().json.cidade, description: 'Inscrição Behold Movement · Dia 31' }, custom_attributes: { igreja: $('Montar mensagens').first().json.igreja, ministerio: $('Montar mensagens').first().json.ministerio, bairro: $('Montar mensagens').first().json.bairro, email_inscricao: $('Montar mensagens').first().json.email } }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2180,
+        140
+      ],
+      "id": "47975327-b42b-5a63-be07-a0580581265b",
+      "name": "Chatwoot: criar contato",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar mensagens').first().json.chatwoot_url }}/api/v1/accounts/{{ $('Montar mensagens').first().json.chatwoot_account_id }}/conversations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inbox_id: Number($('Montar mensagens').first().json.chatwoot_inbox_id), contact_id: $json.contact_id ?? $json.payload?.contact?.id, source_id: $json.payload?.contact_inbox?.source_id, status: 'open', message: { content: $('Montar mensagens').first().json.whatsapp_texto } }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        -20
+      ],
+      "id": "6882c0cc-fb4e-5176-9def-8794b519d95a",
+      "name": "Chatwoot: criar conversa",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Montar mensagens').first().json.chatwoot_url }}/api/v1/accounts/{{ $('Montar mensagens').first().json.chatwoot_account_id }}/conversations/{{ $json.id }}/labels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 20000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ labels: $('Montar mensagens').first().json.etiquetas }) }}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2620,
+        -20
+      ],
+      "id": "22ddb1f7-0510-50d5-b5b9-7826e7ce21be",
+      "name": "Chatwoot: etiquetas",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Chatwoot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Resume o que deu certo e o que falhou, para gravar na planilha.\nconst d = $('Montar mensagens').first().json;\nconst email = $('Enviar e-mail de boas-vindas').first().json;\nconst conversa = $('Chatwoot: criar conversa').first().json;\n\nconst motivo = (o) => {\n  const e = o && o.error;\n  if (!e) return 'sem resposta';\n  return String(e.message || e.description || e).slice(0, 120);\n};\n\nconst okEmail = email && !email.error && email.id;\nconst okWhats = conversa && !conversa.error && conversa.id;\n\nreturn [{\n  json: {\n    telefone_e164: d.telefone_e164,\n    status_email: okEmail ? 'enviado' : 'erro: ' + motivo(email),\n    status_whatsapp: okWhats ? 'enviado' : 'erro: ' + motivo(conversa),\n    conversa_url: okWhats\n      ? `${d.chatwoot_url}/app/accounts/${d.chatwoot_account_id}/conversations/${conversa.id}`\n      : '',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        -20
+      ],
+      "id": "2fe17c49-d89d-5ee7-beed-f37f51bcbf83",
+      "name": "Resumir status"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1q1x8UUi4KOTB6ES8HToqCWhA9uCCkvchnFlU1ZWn8jE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Inscrições",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1q1x8UUi4KOTB6ES8HToqCWhA9uCCkvchnFlU1ZWn8jE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Telefone": "={{ $json.telefone_e164 }}",
+            "Status e-mail": "={{ $json.status_email }}",
+            "Status WhatsApp": "={{ $json.status_whatsapp }}",
+            "Conversa Chatwoot": "={{ $json.conversa_url }}"
+          },
+          "matchingColumns": [
+            "Telefone"
+          ],
+          "schema": [
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Data/hora",
+              "displayName": "Data/hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nome",
+              "displayName": "Nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Telefone",
+              "displayName": "Telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "E-mail",
+              "displayName": "E-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Endereço",
+              "displayName": "Endereço",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Bairro",
+              "displayName": "Bairro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Cidade",
+              "displayName": "Cidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Igreja",
+              "displayName": "Igreja",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Ministério",
+              "displayName": "Ministério",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Consentimento",
+              "displayName": "Consentimento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status e-mail",
+              "displayName": "Status e-mail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status WhatsApp",
+              "displayName": "Status WhatsApp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Conversa Chatwoot",
+              "displayName": "Conversa Chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Observações",
+              "displayName": "Observações",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3060,
+        -20
+      ],
+      "id": "6f8821eb-e641-5362-8cd6-333657d03631",
+      "name": "Atualizar status na planilha",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets (conta do movimento)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Inscrição no site": {
+      "main": [
+        [
+          {
+            "node": "Configurações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurações": {
+      "main": [
+        [
+          {
+            "node": "Validar e padronizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar e padronizar": {
+      "main": [
+        [
+          {
+            "node": "Inscrição válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inscrição válida?": {
+      "main": [
+        [
+          {
+            "node": "Salvar na planilha",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder: dados inválidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar na planilha": {
+      "main": [
+        [
+          {
+            "node": "Responder: inscrição recebida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder: inscrição recebida": {
+      "main": [
+        [
+          {
+            "node": "Montar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Enviar e-mail de boas-vindas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar e-mail de boas-vindas": {
+      "main": [
+        [
+          {
+            "node": "Aguardar antes do WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguardar antes do WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: buscar contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: buscar contato": {
+      "main": [
+        [
+          {
+            "node": "Escolher contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escolher contato": {
+      "main": [
+        [
+          {
+            "node": "Contato já existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contato já existe?": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: criar conversa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chatwoot: criar contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: criar contato": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: criar conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: criar conversa": {
+      "main": [
+        [
+          {
+            "node": "Chatwoot: etiquetas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatwoot: etiquetas": {
+      "main": [
+        [
+          {
+            "node": "Resumir status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumir status": {
+      "main": [
+        [
+          {
+            "node": "Atualizar status na planilha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  },
+  "active": false,
+  "pinData": {}
+}
