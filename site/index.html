@@ -696,6 +696,40 @@ a { color: inherit; }
   }
 }
 
+/* ===================== instagram ===================== */
+.barra .direita { display: flex; align-items: center; gap: 10px; }
+.barra .ig-topo {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  color: inherit; text-decoration: none;
+  box-shadow: inset 0 0 0 1.5px currentColor; opacity: 0.92;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.barra .ig-topo:hover { transform: scale(1.06); opacity: 1; }
+.barra .ig-topo:focus-visible, .ig-faixa a:focus-visible { outline: 3px solid var(--azul-claro); outline-offset: 3px; }
+.barra .marca { white-space: nowrap; }
+@media (max-width: 560px) {
+  .barra .marca { font-size: 1.1rem; }
+  .barra .direita { gap: 8px; }
+  .barra .ig-topo { width: 36px; height: 36px; }
+  .barra .direita .botao { white-space: nowrap; padding: 10px 12px; font-size: 0.6875rem; letter-spacing: 0.08em; }
+}
+
+.ig-faixa { padding: var(--e7) var(--lateral); display: grid; gap: var(--e3); }
+.ig-faixa .rotulo { color: var(--azul-claro); }
+.ig-faixa a.arroba {
+  display: inline-flex; align-items: center; gap: 0.12em; justify-self: start;
+  font-family: var(--display); text-transform: lowercase; line-height: 0.95;
+  font-size: clamp(3rem, 0.6rem + 11vw, 11rem);
+  color: var(--papel); text-decoration: none;
+  transition: color 0.25s ease;
+}
+.ig-faixa a.arroba:hover { color: var(--azul-claro); }
+.ig-faixa a.arroba .seta { font-size: 0.5em; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.ig-faixa a.arroba:hover .seta { transform: translate(0.08em, -0.08em); }
+.ig-faixa .txt { font-size: var(--t24); font-weight: 700; max-width: 34ch; color: var(--suave-preto); }
+.ig-faixa .botao { justify-self: start; background: var(--papel); color: var(--preto); }
+.estado .ig-link { color: inherit; font-weight: 800; }
+
 /* ===================== fechamento ===================== */
 .fecho-final { padding: var(--e7) var(--lateral) var(--e4); min-height: 100vh; min-height: 100svh; display: grid; grid-template-rows: 1fr auto; gap: var(--e6); }
 .fecho-final .marca-final { font-size: clamp(4rem, 1rem + 14vw, 14rem); color: var(--papel); text-shadow: 0 10px 40px rgba(0,0,0,0.2); }
@@ -713,7 +747,10 @@ a { color: inherit; }
 <header class="barra">
   <a class="marca" href="#topo">Behold Movement</a>
   <span class="data">31 · 10 · 2026</span>
-  <a class="botao" href="#inscricao">Quero participar</a>
+  <div class="direita">
+    <a class="ig-topo js-instagram" href="https://www.instagram.com/beholdmvmt" target="_blank" rel="noopener" aria-label="Instagram do Behold Movement (@beholdmvmt)"><svg class="ig-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/></svg></a>
+    <a class="botao" href="#inscricao">Quero participar</a>
+  </div>
 </header>
 
 <div id="ponto" aria-hidden="true"></div>
@@ -1156,6 +1193,14 @@ a { color: inherit; }
     </div>
   </section>
 
+  <!-- ============ INSTAGRAM ============ -->
+  <section class="cena ig-faixa" data-fx-fundo="#16171C" data-fx-tinta="#EBE9E4" aria-label="Instagram do movimento">
+    <p class="rotulo" data-fx="surgir">Acompanhe o movimento</p>
+    <a class="arroba js-instagram" href="https://www.instagram.com/beholdmvmt" target="_blank" rel="noopener" data-fx="esquerda">@beholdmvmt<span class="seta" aria-hidden="true">↗</span></a>
+    <p class="txt" data-fx="subir" data-fx-atraso="150">Avisos, bastidores e tudo o que acontece no movimento, antes e depois do Dia 31.</p>
+    <a class="botao js-instagram" href="https://www.instagram.com/beholdmvmt" target="_blank" rel="noopener" data-fx="surgir" data-fx-atraso="300"><svg class="ig-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/></svg> Seguir no Instagram</a>
+  </section>
+
   <!-- ============ FECHAMENTO ============ -->
   <section class="cena fecho-final" data-fx-fundo="#1F5BF2" data-fx-tinta="#EBE9E4">
     <div>
@@ -1166,12 +1211,13 @@ a { color: inherit; }
       </p>
       <div class="acoes" data-fx="surgir" data-fx-atraso="300">
         <a class="botao claro" href="#inscricao">Quero participar</a>
-        <a class="botao contorno" id="link-instagram" href="#" target="_blank" rel="noopener">Instagram — em breve</a>
+        <a class="botao contorno js-instagram" id="link-instagram" href="https://www.instagram.com/beholdmvmt" target="_blank" rel="noopener"><svg class="ig-icone" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/></svg> @beholdmvmt</a>
       </div>
     </div>
     <footer>
       <span>2026</span>
       <span>Igreja Asafe · Taboão da Serra</span>
+      <a class="js-instagram" href="https://www.instagram.com/beholdmvmt" target="_blank" rel="noopener" style="text-decoration:none">Instagram @beholdmvmt</a>
       <span>Contemple Cristo</span>
     </footer>
   </section>
@@ -1188,8 +1234,7 @@ var CONFIG = {
   WEBHOOK_URL: "https://n8nai.frontia.com.br/webhook/behold-inscricao",
 
   // Link do Instagram do movimento, ex.: "https://instagram.com/beholdmovement"
-  INSTAGRAM_URL: "",
-  INSTAGRAM_TEXTO: "Siga no Instagram",
+  INSTAGRAM_URL: "https://www.instagram.com/beholdmvmt",
 
   // Treinamento do comissionamento (deixe "" para mostrar "A definir")
   TREINAMENTO: {
@@ -1217,9 +1262,7 @@ var CONFIG = {
     var el = document.getElementById("treino-" + k);
     if (v) el.textContent = v; else el.classList.add("vazio");
   });
-  var ig = document.getElementById("link-instagram");
-  if (CONFIG.INSTAGRAM_URL) { ig.href = CONFIG.INSTAGRAM_URL; ig.textContent = CONFIG.INSTAGRAM_TEXTO; }
-  else { ig.removeAttribute("href"); ig.removeAttribute("target"); ig.setAttribute("aria-disabled", "true"); ig.style.opacity = "0.7"; }
+  document.querySelectorAll(".js-instagram").forEach(function (a) { a.href = CONFIG.INSTAGRAM_URL; });
 
   /* ---------- mapa do Brasil (expansão de energia nacional a partir de Taboão da Serra) ---------- */
   var NS = "http://www.w3.org/2000/svg";
@@ -1520,8 +1563,11 @@ var CONFIG = {
     envio.then(function () {
       form.reset(); marcarChips();
       estadoMsg.className = "estado";
-      estadoMsg.textContent = "Inscrição recebida, " + dados.nome.split(" ")[0] + "! Em instantes você recebe as boas-vindas por e-mail e no WhatsApp, com o link do grupo." +
-        (CONFIG.WEBHOOK_URL ? "" : " (modo de teste)");
+      estadoMsg.textContent = "Inscrição recebida, " + dados.nome.split(" ")[0] + "! Em instantes você recebe as boas-vindas por e-mail e no WhatsApp, com o link do grupo. Enquanto isso, siga ";
+      var igMsg = document.createElement("a");
+      igMsg.className = "ig-link"; igMsg.href = CONFIG.INSTAGRAM_URL; igMsg.target = "_blank"; igMsg.rel = "noopener"; igMsg.textContent = "@beholdmvmt";
+      estadoMsg.appendChild(igMsg);
+      estadoMsg.appendChild(document.createTextNode(" no Instagram." + (CONFIG.WEBHOOK_URL ? "" : " (modo de teste)")));
     }).catch(function () {
       estadoMsg.className = "estado erro";
       estadoMsg.textContent = "Não conseguimos enviar agora. Confira sua conexão e tente de novo.";
