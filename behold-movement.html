@@ -74,9 +74,16 @@ a { color: inherit; }
 .hero .stack { display: flex; flex-direction: column; }
 .hero .movement { font-family: var(--display); font-size: clamp(52px, 13vw, 200px); line-height: .82; color: var(--paper); text-transform: uppercase; margin: 0; }
 .hero .behold { font-family: var(--display); font-size: clamp(96px, 25vw, 380px); line-height: .8; color: var(--ink); text-transform: uppercase; margin: 0; margin-left: -.02em; }
-.hero .movement, .hero .behold { animation: rise .9s cubic-bezier(.2,.7,.1,1) both; }
-.hero .behold { animation-delay: .12s; }
-@keyframes rise { from { transform: translateY(18px); opacity: .0; } to { transform: none; opacity: 1; } }
+.hero .movement { animation: wipe-up .9s cubic-bezier(.2,.7,.1,1) both; }
+.hero .behold { animation: wipe-up 1.1s cubic-bezier(.2,.7,.1,1) .2s both; }
+.hero .hero-meta, .hero .slab-foot { animation: fade-in .8s ease .9s both; }
+@keyframes wipe-up { from { clip-path: inset(0 0 100% 0); transform: translateY(30%); } to { clip-path: inset(0 0 0 0); transform: none; } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Revelação ao rolar: o elemento fica visível por padrão; a classe .in (posta pelo script
+   quando ele entra na tela) só toca a animação de entrada. */
+@keyframes rise-in { from { opacity: 0; transform: translateY(40px); } }
+.rv.in { animation: rise-in .8s cubic-bezier(.2,.7,.1,1) both; animation-delay: var(--d, 0s); }
 .hero-meta { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
 .date-chip { font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; border: 1.5px solid var(--paper); padding: 10px 14px; border-radius: 4px; }
 
@@ -98,7 +105,20 @@ a { color: inherit; }
 
 /* ---------- not a ... ---------- */
 .struck { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .35em; font-family: var(--body); font-weight: 600; font-size: clamp(24px, 3.2vw, 46px); line-height: 1.1; color: var(--mute); }
-.struck li { text-decoration: line-through; text-decoration-thickness: .08em; text-decoration-color: currentColor; }
+.struck li span { background: linear-gradient(currentColor, currentColor) 0 58% / 100% .08em no-repeat; -webkit-box-decoration-break: slice; box-decoration-break: slice; }
+.struck.in li span { animation: strike .7s cubic-bezier(.6,0,.2,1) both; animation-delay: calc(var(--i, 0) * .3s + .2s); }
+@keyframes strike { from { background-size: 0% .08em; } }
+.struck.in + h2.d.rv.in { animation-delay: 1.4s; }
+.map.in polygon { stroke-dasharray: 100; animation: draw 1.8s cubic-bezier(.6,0,.2,1) both; }
+.map.in polygon:nth-child(2) { animation-delay: .25s; }
+.map.in polygon:nth-child(3) { animation-delay: .5s; }
+@keyframes draw { from { stroke-dashoffset: 100; } }
+.orbit .ring-outer { transform-origin: 320px 330px; animation: spin 40s linear infinite; }
+.orbit .ring-mid { transform-origin: 320px 330px; animation: spin 90s linear infinite reverse; }
+.orbit .core { transform-origin: 320px 330px; animation: beat 2.6s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes beat { 50% { transform: scale(1.06); } }
+#front-panel > .split { animation: fade-in .35s ease both; }
 .s-paper .struck { color: #636874; }
 
 /* ---------- vision steps ---------- */
@@ -305,10 +325,10 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
 <section class="slab s-ink">
   <p class="eyebrow">O Behold</p>
   <ul class="struck">
-    <li>Não é um evento.</li>
-    <li>Não é uma programação.</li>
-    <li>Não é uma campanha.</li>
-    <li>Não é um culto especial.</li>
+    <li><span>Não é um evento.</span></li>
+    <li><span>Não é uma programação.</span></li>
+    <li><span>Não é uma campanha.</span></li>
+    <li><span>Não é um culto especial.</span></li>
   </ul>
   <h2 class="d d-xl c-sky">É um movimento.</h2>
   <div class="slab-foot"><span>Behold Movement</span><span>06</span></div>
@@ -345,9 +365,9 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     <div class="map">
       <svg viewBox="0 0 760 640" role="img" aria-label="Mapa ilustrativo de Embu das Artes, Taboão da Serra e Itapecerica da Serra">
         <g stroke="#eceae5" stroke-width="3" stroke-linejoin="round" font-family="Anton, Impact, sans-serif" text-anchor="middle">
-          <polygon points="170,20 335,52 408,135 400,272 302,335 170,355 52,295 0,185 22,82" fill="#3b6ff5"/>
-          <polygon points="415,112 545,40 668,70 752,168 735,295 625,345 505,320 415,250" fill="#eceae5"/>
-          <polygon points="52,315 170,365 305,345 410,282 505,320 545,425 505,565 380,635 210,625 85,540 22,425" fill="#3b6ff5"/>
+          <polygon pathLength="100" points="170,20 335,52 408,135 400,272 302,335 170,355 52,295 0,185 22,82" fill="#3b6ff5"/>
+          <polygon pathLength="100" points="415,112 545,40 668,70 752,168 735,295 625,345 505,320 415,250" fill="#eceae5"/>
+          <polygon pathLength="100" points="52,315 170,365 305,345 410,282 505,320 545,425 505,565 380,635 210,625 85,540 22,425" fill="#3b6ff5"/>
           <g stroke="none" font-size="42">
             <text x="210" y="168" fill="#eceae5">EMBU</text><text x="210" y="214" fill="#eceae5">DAS ARTES</text>
             <text x="585" y="140" fill="#16171c">TABOÃO</text><text x="585" y="186" fill="#16171c">DA SERRA</text>
@@ -372,9 +392,9 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     </div>
     <div class="orbit">
       <svg viewBox="0 0 640 640" role="img" aria-label="Círculos a partir da Igreja Asafe, para os bairros e as cidades">
-        <circle cx="320" cy="330" r="290" fill="none" stroke="#6e97ff" stroke-width="2.5" stroke-dasharray="6 6"/>
-        <circle cx="320" cy="330" r="200" fill="none" stroke="#6e97ff" stroke-width="2.5"/>
-        <circle cx="320" cy="330" r="115" fill="#1f5bf2" stroke="#6e97ff" stroke-width="2.5"/>
+        <circle class="ring-outer" cx="320" cy="330" r="290" fill="none" stroke="#6e97ff" stroke-width="2.5" stroke-dasharray="6 6"/>
+        <circle class="ring-mid" cx="320" cy="330" r="200" fill="none" stroke="#6e97ff" stroke-width="2.5" stroke-dasharray="2 10"/>
+        <circle class="core" cx="320" cy="330" r="115" fill="#1f5bf2" stroke="#6e97ff" stroke-width="2.5"/>
         <circle cx="320" cy="330" r="18" fill="#eceae5"/>
         <g font-family="'Space Mono', monospace" font-weight="700" font-size="20" text-anchor="middle">
           <rect x="250" y="22" width="140" height="34" fill="#16171c"/><text x="320" y="46" fill="#6e97ff">CIDADES</text>
@@ -604,7 +624,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
 <!-- 24 SONHO -->
 <section class="slab s-paper">
   <p class="eyebrow">Nosso sonho</p>
-  <ul class="struck"><li>Não é realizar um grande evento.</li></ul>
+  <ul class="struck"><li><span>Não é realizar um grande evento.</span></li></ul>
   <h2 class="d d-l">É construir uma<br>cultura missionária.</h2>
   <p class="d d-m c-blue">É fazer com que Cristo seja conhecido.</p>
   <div class="slab-foot"><span>Behold Movement</span><span>24</span></div>
@@ -894,6 +914,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     }
   });
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ondas = [], proximaOnda = 0;
   function draw(t) {
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.save(); ctx.scale(S, S);
@@ -901,13 +922,50 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
       ctx.beginPath(); poly.forEach(function (p, i) { i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }); ctx.closePath();
       ctx.fillStyle = "#3b6ff5"; ctx.fill(); ctx.lineWidth = 3.5; ctx.strokeStyle = "#eceae5"; ctx.stroke();
     });
+    if (!reduce && t > proximaOnda) {
+      ondas.push({ p: pts[Math.floor(rnd() * pts.length)], t0: t });
+      proximaOnda = t + 450;
+    }
+    ondas = ondas.filter(function (o) { return t - o.t0 < 1600; });
+    ondas.forEach(function (o) {
+      var k = (t - o.t0) / 1600;
+      ctx.beginPath(); ctx.arc(o.p[0], o.p[1], 12 + k * 44, 0, Math.PI * 2);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(236,234,229," + (0.85 * (1 - k)).toFixed(3) + ")"; ctx.stroke();
+    });
     pts.forEach(function (p, i) {
-      var r = 11 + (reduce ? 0 : Math.sin(t / 700 + i * 1.7) * 1.6);
+      var r = 11 + (reduce ? 0 : Math.sin(t / 600 + i * 1.7) * 3);
       ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2); ctx.fillStyle = "#16171c"; ctx.fill();
     });
     ctx.restore();
     if (!reduce) requestAnimationFrame(draw);
   }
   draw(0);
+
+  // ---- Revelação ao rolar: cada bloco sobe quando entra na tela; listas e cartões, um por vez
+  if (!reduce && "IntersectionObserver" in window) {
+    var avulsos = ".slab:not(.hero) > .eyebrow, .slab:not(.hero) > .d, .slab:not(.hero) > h2, .slab:not(.hero) > h3, .slab:not(.hero) > .lede, " +
+      ".slab:not(.hero) > .verse, .split > div > .d, .split > div > h2, .split > div > p.d, .split > h2, .alert, .poster, .placeholder, .panel";
+    var grupos = ".verbs, .tiles, .steps, .hoods, .fronts, .roles, .agenda tbody, .imagine, .cities";
+    var alvos = [];
+    document.querySelectorAll(avulsos).forEach(function (el) { el.classList.add("rv"); alvos.push(el); });
+    document.querySelectorAll(grupos).forEach(function (g) {
+      Array.prototype.forEach.call(g.children, function (el, i) {
+        el.classList.add("rv"); el.style.setProperty("--d", Math.min(i * 0.07, 0.6) + "s"); alvos.push(el);
+      });
+    });
+    document.querySelectorAll(".struck").forEach(function (ul) {
+      Array.prototype.forEach.call(ul.children, function (li, i) { li.style.setProperty("--i", i); });
+      alvos.push(ul);
+    });
+    document.querySelectorAll(".map").forEach(function (m) { alvos.push(m); });
+    var io = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: "0px 0px 60px 0px" });
+    alvos.forEach(function (el) { io.observe(el); });
+  }
 })();
 </script>
