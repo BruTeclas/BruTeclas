@@ -35,7 +35,6 @@
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
 body { margin: 0; background: var(--ink); color: var(--paper); font-family: var(--body); font-size: 17px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 :focus-visible { outline: 3px solid var(--sky); outline-offset: 3px; }
@@ -270,6 +269,18 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
 .poster .pb { font-family: var(--display); font-size: clamp(64px, 13vw, 176px); line-height: .78; text-transform: uppercase; color: var(--ink); transform: scaleY(1.35); transform-origin: top left; }
 .poster .pf { margin-top: auto; display: flex; justify-content: space-between; font-family: var(--mono); font-weight: 700; font-size: 11px; letter-spacing: .04em; }
 @media (max-width: 900px) { .poster { justify-self: start; } }
+
+/* "Reduzir movimento": as animações continuam, mas sem deslocar nada na tela
+   (só aparecem, desenham ou revelam); giros, pulsos e deslizes são desligados. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero .movement, .hero .behold { animation-name: wipe-only; }
+  .rv.in { animation-name: fade-only; }
+  .orbit .ring-outer, .orbit .ring-mid, .orbit .core { animation: none; }
+  .front:hover { transform: none; }
+}
+@keyframes wipe-only { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes fade-only { from { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -958,7 +969,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
   draw(0);
 
   // ---- Revelação ao rolar: cada bloco sobe quando entra na tela; listas e cartões, um por vez
-  if (!reduce && "IntersectionObserver" in window) {
+  if ("IntersectionObserver" in window) {
     var avulsos = ".slab:not(.hero) > .eyebrow, .slab:not(.hero) > .d, .slab:not(.hero) > h2, .slab:not(.hero) > h3, .slab:not(.hero) > .lede, " +
       ".slab:not(.hero) > .verse, .split > div > .d, .split > div > h2, .split > div > p.d, .split > h2, .alert, .poster, .placeholder, .panel";
     var grupos = ".verbs, .tiles, .steps, .hoods, .fronts, .roles, .agenda tbody, .imagine, .cities";
