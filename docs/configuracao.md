@@ -2,7 +2,7 @@
 
 ## Como funciona
 
-1. A pessoa se inscreve em https://beholdmovement.com.br.
+1. A pessoa se inscreve em https://beholdmovement.com.br, de qualquer lugar do Brasil. Ao digitar o CEP, o site preenche rua, bairro, cidade e estado (serviço ViaCEP). Ao escolher o estado, o campo Cidade sugere os municípios daquele estado (IBGE). Se esses serviços estiverem fora do ar, a pessoa digita o endereço normalmente.
 2. O site envia os dados para o n8n (`https://n8nai.frontia.com.br/webhook/behold-inscricao`).
 3. O n8n valida os dados, grava na planilha [Behold Movement · Inscrições Dia 31](https://docs.google.com/spreadsheets/d/1q1x8UUi4KOTB6ES8HToqCWhA9uCCkvchnFlU1ZWn8jE/edit) e responde ao site.
 4. O n8n manda o e-mail de boas-vindas pelo Gmail do movimento.
@@ -47,7 +47,7 @@ O DNS de `beholdmovement.com.br` já aponta para o VPS (147.93.68.18).
    - *Google Sheets*: conta Google com acesso à planilha. A planilha é de bru.teclas@gmail.com; compartilhe com o Gmail do movimento como Editor se for usar essa conta.
    - *Gmail*: o Gmail novo do movimento, que é o remetente dos e-mails.
    - *Chatwoot API*: tipo **Header Auth**, nome `api_access_token`, valor = token de acesso do seu perfil no Chatwoot.
-4. Nos nós **Salvar na planilha** e **Atualizar status na planilha**, confira se a aba escolhida é **Inscrições**.
+4. Nos nós **Salvar na planilha** e **Atualizar status na planilha**, confira se a aba escolhida é **Inscrições**. A aba precisa ter exatamente estas colunas, nesta ordem: ID, Data/hora, Nome, Telefone, E-mail, CEP, Endereço, Bairro, Cidade, Estado, Igreja, Ministério, Consentimento, Status e-mail, Status WhatsApp, Conversa Chatwoot, Observações (veja `scripts/build-planilha.py`).
 5. Ative o workflow e faça uma inscrição de teste com o seu próprio número.
 
 ## Cuidados com o WhatsApp (API não oficial)

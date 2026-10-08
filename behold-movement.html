@@ -195,6 +195,15 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
 .field.invalid input, .field.invalid select { border-color: #ff7a6b; }
 .field .err { font-family: var(--mono); font-size: 12.5px; color: #ff9a8d; margin: 0; }
 .sf-note { margin: 0; color: var(--mute); max-width: 60ch; }
+.addr { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 28px; }
+.addr legend { padding: 0; margin-bottom: 18px; font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--sky); }
+.addr .a2 { grid-column: span 2; }
+.addr .a4 { grid-column: span 4; }
+@media (max-width: 700px) { .addr { grid-template-columns: minmax(0, 1fr); } .addr .a2, .addr .a4 { grid-column: auto; } }
+.hint { margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: var(--mute); }
+.hint a { color: var(--sky); }
+.hint.ok { color: var(--sky); }
+.hint.bad { color: #ff9a8d; }
 .consent .check { display: flex; gap: 14px; align-items: flex-start; font: 400 15px/1.5 var(--body); letter-spacing: 0; text-transform: none; color: var(--paper); cursor: pointer; max-width: 75ch; }
 .consent input[type="checkbox"] { appearance: none; flex: none; width: 22px; height: 22px; margin: 1px 0 0; border: 2px solid var(--sky); border-radius: 3px; background: transparent; cursor: pointer; display: grid; place-content: center; }
 .consent input[type="checkbox"]::after { content: ""; width: 11px; height: 6px; border-left: 3px solid var(--ink); border-bottom: 3px solid var(--ink); transform: rotate(-45deg) translate(1px, -1px); opacity: 0; }
@@ -485,26 +494,64 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
         <label for="f-email">E-mail</label>
         <input id="f-email" name="email" type="email" inputmode="email" autocomplete="email" required maxlength="160" placeholder="voce@exemplo.com">
       </div>
-      <div class="field wide">
-        <label for="f-endereco">Endereço</label>
-        <input id="f-endereco" name="endereco" type="text" autocomplete="street-address" required maxlength="200" placeholder="Rua e número">
-      </div>
-      <div class="field">
-        <label for="f-bairro">Bairro</label>
-        <input id="f-bairro" name="bairro" type="text" list="bairros" autocomplete="address-level3" required maxlength="80" placeholder="Ex.: Jardim Record">
-        <datalist id="bairros"><option value="Jardim Saporito"><option value="Jardim São Judas"><option value="Jardim Comunitário"><option value="Parque Pinheiros"><option value="Jardim Salete"><option value="Saint Moritz"><option value="Jardim Record"><option value="Jardim Clementino"></datalist>
-      </div>
-      <div class="field">
-        <label for="f-cidade">Cidade</label>
-        <select id="f-cidade" name="cidade" required>
-          <option value="">Selecione a cidade</option>
-          <option>Taboão da Serra</option>
-          <option>Embu das Artes</option>
-          <option>Itapecerica da Serra</option>
-          <option>São Paulo</option>
-          <option>Outra cidade</option>
-        </select>
-      </div>
+      <fieldset class="addr wide">
+        <legend>Endereço</legend>
+        <div class="field a2">
+          <label for="f-cep">CEP</label>
+          <input id="f-cep" name="cep" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" aria-describedby="f-cep-hint">
+          <p class="hint" id="f-cep-hint" aria-live="polite">Digite o CEP e preenchemos o endereço. <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noopener">Não sei meu CEP</a></p>
+        </div>
+        <div class="field a4">
+          <label for="f-endereco">Rua</label>
+          <input id="f-endereco" name="endereco" type="text" autocomplete="address-line1" required maxlength="160" placeholder="Rua, avenida, travessa…">
+        </div>
+        <div class="field a2">
+          <label for="f-numero">Número e complemento</label>
+          <input id="f-numero" name="numero" type="text" autocomplete="address-line2" required maxlength="40" placeholder="Ex.: 120, apto 32">
+        </div>
+        <div class="field a4">
+          <label for="f-bairro">Bairro</label>
+          <input id="f-bairro" name="bairro" type="text" autocomplete="address-level3" required maxlength="80" placeholder="Seu bairro">
+        </div>
+        <div class="field a4">
+          <label for="f-cidade">Cidade</label>
+          <input id="f-cidade" name="cidade" type="text" list="cidades" autocomplete="address-level2" required maxlength="80" placeholder="Sua cidade">
+          <datalist id="cidades"></datalist>
+        </div>
+        <div class="field a2">
+          <label for="f-uf">Estado</label>
+          <select id="f-uf" name="uf" autocomplete="address-level1" required>
+            <option value="">Selecione</option>
+            <option value="AC">Acre (AC)</option>
+            <option value="AL">Alagoas (AL)</option>
+            <option value="AP">Amapá (AP)</option>
+            <option value="AM">Amazonas (AM)</option>
+            <option value="BA">Bahia (BA)</option>
+            <option value="CE">Ceará (CE)</option>
+            <option value="DF">Distrito Federal (DF)</option>
+            <option value="ES">Espírito Santo (ES)</option>
+            <option value="GO">Goiás (GO)</option>
+            <option value="MA">Maranhão (MA)</option>
+            <option value="MT">Mato Grosso (MT)</option>
+            <option value="MS">Mato Grosso do Sul (MS)</option>
+            <option value="MG">Minas Gerais (MG)</option>
+            <option value="PA">Pará (PA)</option>
+            <option value="PB">Paraíba (PB)</option>
+            <option value="PR">Paraná (PR)</option>
+            <option value="PE">Pernambuco (PE)</option>
+            <option value="PI">Piauí (PI)</option>
+            <option value="RJ">Rio de Janeiro (RJ)</option>
+            <option value="RN">Rio Grande do Norte (RN)</option>
+            <option value="RS">Rio Grande do Sul (RS)</option>
+            <option value="RO">Rondônia (RO)</option>
+            <option value="RR">Roraima (RR)</option>
+            <option value="SC">Santa Catarina (SC)</option>
+            <option value="SP">São Paulo (SP)</option>
+            <option value="SE">Sergipe (SE)</option>
+            <option value="TO">Tocantins (TO)</option>
+          </select>
+        </div>
+      </fieldset>
       <div class="field">
         <label for="f-igreja">Igreja onde congrega</label>
         <input id="f-igreja" name="igreja" type="text" required maxlength="120" placeholder="Nome da sua igreja">
@@ -671,6 +718,64 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
   min.addEventListener("change", function () { choose(min.value); clearErr(min); });
 
   // ---- Inscrição via webhook
+  // ---- Endereço: CEP (ViaCEP) preenche rua, bairro, cidade e estado; IBGE sugere as cidades do estado
+  var cep = document.getElementById("f-cep");
+  var cepHint = document.getElementById("f-cep-hint");
+  var cepHintBase = cepHint.innerHTML;
+  var uf = document.getElementById("f-uf");
+  var cidadesList = document.getElementById("cidades");
+  var cidadesCache = {};
+  var ultimoCep = "";
+  function hint(text, kind) {
+    if (!text) { cepHint.innerHTML = cepHintBase; cepHint.className = "hint"; return; }
+    cepHint.textContent = text; cepHint.className = "hint" + (kind ? " " + kind : "");
+  }
+  function preenche(id, valor) {
+    var el = document.getElementById(id);
+    if (!valor) return;
+    el.value = valor;
+    clearErr(el);
+  }
+  function carregaCidades(sigla) {
+    if (!sigla) { cidadesList.innerHTML = ""; return; }
+    function mostra(nomes) {
+      if (uf.value !== sigla) return;
+      cidadesList.innerHTML = nomes.map(function (n) { return '<option value="' + n.replace(/"/g, "&quot;") + '">'; }).join("");
+    }
+    if (cidadesCache[sigla]) { mostra(cidadesCache[sigla]); return; }
+    fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados/" + sigla + "/municipios")
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (lista) {
+        cidadesCache[sigla] = lista.map(function (m) { return m.nome; }).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+        mostra(cidadesCache[sigla]);
+      })
+      .catch(function () { /* sem sugestões: a cidade continua sendo digitada livremente */ });
+  }
+  uf.addEventListener("change", function () { carregaCidades(uf.value); });
+  cep.addEventListener("input", function () {
+    var d = cep.value.replace(/\D/g, "").slice(0, 8);
+    cep.value = d.length > 5 ? d.slice(0, 5) + "-" + d.slice(5) : d;
+    if (d.length < 8) { if (ultimoCep) { ultimoCep = ""; hint(""); } return; }
+    if (d === ultimoCep) return;
+    ultimoCep = d;
+    hint("Buscando o endereço…");
+    fetch("https://viacep.com.br/ws/" + d + "/json/")
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (e) {
+        if (ultimoCep !== d) return;
+        if (e.erro) { hint("Não encontramos esse CEP. Confira os números ou preencha o endereço abaixo.", "bad"); return; }
+        preenche("f-endereco", e.logradouro);
+        preenche("f-bairro", e.bairro);
+        preenche("f-cidade", e.localidade);
+        if (e.uf) { uf.value = e.uf; clearErr(uf); carregaCidades(e.uf); }
+        hint("Endereço encontrado. Confira e informe o número.", "ok");
+        document.getElementById(e.logradouro ? "f-numero" : "f-endereco").focus();
+      })
+      .catch(function () {
+        if (ultimoCep === d) hint("Não conseguimos buscar o CEP agora. Preencha o endereço abaixo.", "bad");
+      });
+  });
+
   var tel = document.getElementById("f-telefone");
   var send = document.getElementById("f-send");
   var status = document.getElementById("f-status");
@@ -686,9 +791,12 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     nome: "Informe seu nome.",
     telefone: "Informe um celular com WhatsApp e DDD, por exemplo (11) 91234-5678.",
     email: "Informe um e-mail válido, por exemplo maria@gmail.com.",
-    endereco: "Informe a rua e o número.",
+    cep: "O CEP tem 8 números, por exemplo 06750-000.",
+    endereco: "Informe a rua.",
+    numero: "Informe o número (ou S/N).",
     bairro: "Informe seu bairro.",
-    cidade: "Escolha sua cidade.",
+    cidade: "Informe sua cidade.",
+    uf: "Escolha seu estado.",
     igreja: "Informe a igreja onde você congrega.",
     ministerio: "Escolha um ministério de atuação.",
     consentimento: "Marque a autorização para recebermos sua inscrição."
@@ -711,6 +819,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     if (el.name === "telefone") { var d = v.replace(/\D/g, ""); return d.length === 11 && d.charAt(2) === "9"; }
     if (el.name === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
     if (el.name === "nome") return v.length >= 3;
+    if (el.name === "cep") return v === "" || v.replace(/\D/g, "").length === 8;
     return v.length > 0;
   }
   Array.prototype.forEach.call(form.elements, function (el) {
@@ -734,7 +843,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     if (!url) { say("As inscrições ainda não estão abertas. O link de envio será configurado pela coordenação.", "bad"); return; }
 
     var body = new URLSearchParams();
-    ["nome", "telefone", "endereco", "bairro", "cidade", "igreja", "ministerio", "site"].forEach(function (k) { body.append(k, form.elements[k].value.trim()); });
+    ["nome", "telefone", "cep", "endereco", "numero", "bairro", "cidade", "uf", "igreja", "ministerio", "site"].forEach(function (k) { body.append(k, form.elements[k].value.trim()); });
     body.append("email", form.elements.email.value.trim().toLowerCase());
     body.append("telefone_e164", "+55" + form.elements.telefone.value.replace(/\D/g, ""));
     body.append("consentimento", form.elements.consentimento.checked ? "sim" : "nao");
@@ -745,7 +854,7 @@ a.role.signup:hover { background: var(--blue-soft); border-color: var(--blue-sof
     fetch(url, { method: "POST", body: body })
       .then(function (res) {
         if (!res.ok) throw new Error("status " + res.status);
-        form.reset(); choose("");
+        form.reset(); choose(""); ultimoCep = ""; hint(""); cidadesList.innerHTML = "";
         say("Inscrição recebida! Em instantes você recebe as boas-vindas por e-mail e no WhatsApp, com o link do grupo.", "ok");
       })
       .catch(function () {

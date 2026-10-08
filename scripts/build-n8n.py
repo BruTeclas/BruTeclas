@@ -42,13 +42,23 @@ let digitos = limpa(b.telefone_e164 || b.telefone).replace(/\D/g, '');
 if (digitos.startsWith('55') && digitos.length >= 12) digitos = digitos.slice(2);
 
 const MINISTERIOS = ['Evangelizando', 'Liderando grupos', 'Mídia', 'Louvor', 'Suprimento', 'Ação social', 'Intercessão'];
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR',
+  'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+
+const cepDigitos = limpa(b.cep).replace(/\D/g, '');
+const rua = limpa(b.endereco);
+const numero = limpa(b.numero);
 
 const dados = {
   nome: capitaliza(b.nome),
   email: limpa(b.email).toLowerCase(),
-  endereco: limpa(b.endereco),
+  cep: cepDigitos.length === 8 ? cepDigitos.slice(0, 5) + '-' + cepDigitos.slice(5) : '',
+  rua,
+  numero,
+  endereco: [rua, numero].filter(Boolean).join(', '),
   bairro: capitaliza(b.bairro),
-  cidade: limpa(b.cidade),
+  cidade: capitaliza(b.cidade),
+  uf: limpa(b.uf).toUpperCase(),
   igreja: limpa(b.igreja),
   ministerio: limpa(b.ministerio),
   consentimento: limpa(b.consentimento) === 'sim' ? 'sim' : 'não',
@@ -58,9 +68,11 @@ const erros = [];
 if (dados.nome.length < 3) erros.push('nome');
 if (!(digitos.length === 11 && digitos.charAt(2) === '9')) erros.push('telefone');
 if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(dados.email)) erros.push('email');
-for (const campo of ['endereco', 'bairro', 'cidade', 'igreja']) {
+if (cepDigitos && cepDigitos.length !== 8) erros.push('cep');
+for (const campo of ['rua', 'numero', 'bairro', 'cidade', 'igreja']) {
   if (!dados[campo]) erros.push(campo);
 }
+if (!UFS.includes(dados.uf)) erros.push('uf');
 if (!MINISTERIOS.includes(dados.ministerio)) erros.push('ministerio');
 if (dados.consentimento !== 'sim') erros.push('consentimento');
 
@@ -237,8 +249,8 @@ return [{
 
 # ------------------------------------------------------------ helpers de nós
 
-COLUNAS = ["ID", "Data/hora", "Nome", "Telefone", "E-mail", "Endereço", "Bairro",
-           "Cidade", "Igreja", "Ministério", "Consentimento", "Status e-mail",
+COLUNAS = ["ID", "Data/hora", "Nome", "Telefone", "E-mail", "CEP", "Endereço", "Bairro",
+           "Cidade", "Estado", "Igreja", "Ministério", "Consentimento", "Status e-mail",
            "Status WhatsApp", "Conversa Chatwoot", "Observações"]
 
 
@@ -414,9 +426,11 @@ def build() -> dict:
             "Nome": f"={{{{ {v}.nome }}}}",
             "Telefone": f"={{{{ {v}.telefone_e164 }}}}",
             "E-mail": f"={{{{ {v}.email }}}}",
+            "CEP": f"={{{{ {v}.cep }}}}",
             "Endereço": f"={{{{ {v}.endereco }}}}",
             "Bairro": f"={{{{ {v}.bairro }}}}",
             "Cidade": f"={{{{ {v}.cidade }}}}",
+            "Estado": f"={{{{ {v}.uf }}}}",
             "Igreja": f"={{{{ {v}.igreja }}}}",
             "Ministério": f"={{{{ {v}.ministerio }}}}",
             "Consentimento": f"={{{{ {v}.consentimento }}}}",
@@ -461,8 +475,9 @@ def build() -> dict:
             body=(
                 f"={{{{ JSON.stringify({{ inbox_id: Number({M}.chatwoot_inbox_id), name: {M}.nome, "
                 f"phone_number: {M}.telefone_e164, additional_attributes: {{ city: {M}.cidade, "
-                f"description: 'Inscrição Behold Movement · Dia 31' }}, custom_attributes: {{ "
-                f"igreja: {M}.igreja, ministerio: {M}.ministerio, bairro: {M}.bairro, "
+                f"country: 'Brasil', description: 'Inscrição Behold Movement · Dia 31' }}, "
+                f"custom_attributes: {{ igreja: {M}.igreja, ministerio: {M}.ministerio, "
+                f"bairro: {M}.bairro, cidade: {M}.cidade, uf: {M}.uf, "
                 f"email_inscricao: {M}.email }} }}) }}}}"
             ),
         ),
