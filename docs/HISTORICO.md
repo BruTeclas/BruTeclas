@@ -22,7 +22,17 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - **Histórico:** cada vez que o cliente salva, a versão anterior fica guardada, e você pode desfazer.
   - **Vencimento:** o link para de funcionar se o perfil estiver desativado ou vencido (v1.1.0).
 
-## v1.2.0 · 13/10/2026: página pública blindada e painel em endereço próprio
+## v1.2.0 · 13/10/2026: página pública blindada e painel em endereço próprio (ponto de restauração `versao-1.2.0`)
+
+- **Publicada em 13/10/2026:**
+  - os 21 arquivos no ar conferidos contra o pacote;
+  - o site público não tem mais nenhum código do painel;
+  - a mudança do banco foi aplicada depois, e a leitura como visitante foi conferida.
+- **Testada antes num Apache montado como a Hostinger**, com o site em `public_html` e o painel em `public_html/painel-admin`:
+  - cada pedido recebe uma única lista de permissões (CSP);
+  - o painel só abre pelo subdomínio;
+  - os redirecionamentos `/admin` mantêm o código do e-mail;
+  - a renovação do certificado passa.
 
 - **Painel em `admin.nfcliente.com.br`**, na pasta `public_html/painel-admin`, que é a do subdomínio.
   - O login do administrador fica guardado só nesse endereço, fora do alcance das páginas públicas.
