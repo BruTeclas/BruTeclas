@@ -26,7 +26,7 @@ PAINEL = [("painel-admin/" + destino, origem) for destino, origem in [
     ("redefinir-senha.html", "admin/redefinir-senha.html"), ("redefinir-senha.js", "admin/redefinir-senha.js"),
     (".htaccess", "admin/.htaccess"),
     ("css/perfil.css", "css/perfil.css"),
-    ("js/config.js", "js/config.js"), ("js/db.js", "js/db.js"), ("js/perfil-render.js", "js/perfil-render.js"),
+    ("js/config.js", "js/config.js"), ("js/db.js", "js/db.js"), ("js/perfil-render.js", "js/perfil-render.js"), ("js/editor-perfil.js", "js/editor-perfil.js"),
     ("js/lib/supabase-js-2.117.2.js", "js/lib/supabase-js-2.117.2.js"), ("js/lib/qrcode-1.0.0.min.js", "js/lib/qrcode-1.0.0.min.js"),
 ]]
 ARQUIVOS = SITE_PUBLICO + PAINEL
