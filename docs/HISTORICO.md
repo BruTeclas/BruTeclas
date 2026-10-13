@@ -12,6 +12,39 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
+## Planejado
+
+- **v1.2.0: página pública blindada**
+  - painel em `admin.nfcliente.com.br`; o subdomínio já foi criado, na pasta `public_html/painel-admin`;
+  - página pública sem a biblioteca de login;
+  - regras de segurança mais rígidas nas páginas públicas;
+  - resposta igual para link desativado, em configuração ou inexistente.
+- **v1.3.0: link de configuração para o cliente**
+  - **Para quem:** só para cliente ativo com perfil no ar.
+  - **Validade:** vale até você revogar. Gerar um link novo cancela o anterior.
+  - **PIN:** pede o PIN **toda vez** que abre, com os **4 últimos dígitos do telefone cadastrado**. Tentativas erradas em sequência bloqueiam o link por um tempo.
+  - **Quando vai ao ar:** as alterações só valem quando o cliente clica em **Salvar**.
+  - **Histórico:** cada vez que o cliente salva, a versão anterior fica guardada, e você pode desfazer.
+  - **Vencimento:** o link para de funcionar se o perfil estiver desativado ou vencido (v1.1.0).
+
+## v1.1.0 · 13/10/2026: perfil sai do ar sozinho quando a cobrança vence
+
+- **Regra:**
+  - com data de vencimento, a página continua no ar até 3 dias depois do vencimento (carência);
+  - no 4º dia mostra "Perfil temporariamente indisponível";
+  - sem data, nunca sai do ar.
+- **Renovar +1 mês**, na lista e no perfil: avança o vencimento em 1 mês e o perfil volta ao ar na hora.
+- **Painel:**
+  - selo "Fora do ar · vencido";
+  - avisos "vence em X dias" e "sai do ar em…";
+  - contagem no resumo;
+  - o filtro "No ar" não mostra perfis vencidos.
+- **Banco: mudou.**
+  - nova função `perfil_vencido`;
+  - `perfil_publico` passou a conferir o vencimento.
+  - Para desfazer: `supabase/versoes/v1.1.0-desfazer.sql`.
+- **Teste ao vivo:** o perfil de teste `studio-tati-cilios` (vencimento 10/10/2026) sai do ar em 14/10/2026.
+
 ## v1.0.0 · 13/10/2026: versão estável (ponto de restauração `versao-1.0.0`)
 
 É a versão que está no ar desde 06/10/2026 e funciona sem problemas. Em relação à v0.2.0, o site não mudou: só a documentação e as ferramentas.

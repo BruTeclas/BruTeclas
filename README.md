@@ -25,7 +25,8 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
 |---|---|---|
 | **Em configuração** | "Em breve" | Logo após "Ativar novo perfil", enquanto você monta a página |
 | **No ar** | A página completa | Depois de clicar em "Liberar para o cliente" |
-| **Desativado** | "Perfil temporariamente indisponível" | Pagamento atrasado. **Nada é apagado** e dá para reativar com um clique |
+| **Desativado** | "Perfil temporariamente indisponível" | Quando você quiser tirar do ar. **Nada é apagado** e dá para reativar com um clique |
+| **Fora do ar · vencido** | "Perfil temporariamente indisponível" | **Automático:** 3 dias depois do vencimento sem renovação. Ao renovar, volta na hora (veja *Vencimento*) |
 | **Excluído** | "Página não encontrada" | Apaga página, links, fotos e dados internos, **sem volta**. Pede para digitar o link como confirmação |
 
 ### O que dá para configurar em cada perfil
@@ -42,6 +43,21 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
   - **16 redes sociais:** Instagram, TikTok, Facebook, YouTube, LinkedIn, X, Threads, Kwai e outras.
 - Botões "Salvar contato" e "Compartilhar".
 - **Cliente e cobrança** (só você vê): cliente ligado ao perfil, data de vencimento e observações. Perfis vencidos ficam destacados e têm um filtro próprio.
+
+### Vencimento: o perfil sai do ar sozinho
+
+Cada perfil pode ter uma data de **próximo vencimento**.
+
+| Quando | Na página | No painel |
+|---|---|---|
+| Faltam 7 dias ou menos | Normal | "Vence em X dias", em laranja |
+| Venceu, até 3 dias depois (carência) | Normal | "Venceu… sai do ar em…", em laranja |
+| A partir do 4º dia | "Perfil temporariamente indisponível" | Selo **Fora do ar · vencido**, em vermelho |
+
+- **Renovar:** quando o cliente pagar, clique em **Renovar +1 mês**, na lista ou no perfil. O vencimento avança 1 mês a partir do vencimento anterior, e a página volta ao ar na hora. No campo de data do perfil, o botão **+1 mês** faz o mesmo e vale ao salvar.
+- **Sem data de vencimento:** o perfil nunca sai do ar sozinho.
+- **Desativado à mão:** continua desligado mesmo depois de renovar. Use **Reativar**.
+- **Quem decide é o banco:** o próprio banco confere a data a cada acesso, no horário de Brasília. Não depende de nenhuma rotina agendada nem do painel aberto. Para mudar a carência, altere o `+ 3` em `public.perfil_vencido` (`supabase/schema.sql`) e `CARENCIA_DIAS` em `js/db.js`.
 
 ### Clientes
 

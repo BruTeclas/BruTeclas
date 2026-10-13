@@ -46,6 +46,40 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Vencimento: o perfil sai do ar sozinho depois do vencimento + carência.
+  // A regra que vale é a do banco (public.perfil_vencido); esta cópia só desenha o painel.
+  // ---------------------------------------------------------------------------
+  var CARENCIA_DIAS = 3;
+  // Data de hoje no horário de Brasília (AAAA-MM-DD), a mesma usada pelo banco
+  function hojeBrasilia() {
+    try { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+    catch (e) { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+  }
+  function somarDias(iso, n) {
+    var p = String(iso).slice(0, 10).split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n));
+    return d.toISOString().slice(0, 10);
+  }
+  // 31/01 + 1 mês = 28/02 (ou 29/02): nunca pula para o mês seguinte
+  function somarMes(iso) {
+    var p = String(iso).slice(0, 10).split("-").map(Number), ano = p[0] + (p[1] === 12 ? 1 : 0), mes = p[1] % 12 + 1;
+    var ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+    return ano + "-" + String(mes).padStart(2, "0") + "-" + String(Math.min(p[2], ultimo)).padStart(2, "0");
+  }
+  function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 864e5); }
+  // situacao: "sem" (sem vencimento), "em-dia", "vence-logo" (até 7 dias), "carencia" (venceu, ainda no ar) ou "fora" (saiu do ar)
+  function situacaoVencimento(vencimento, hoje) {
+    if (!vencimento) return { situacao: "sem" };
+    var v = String(vencimento).slice(0, 10), h = hoje || hojeBrasilia(), saiDoAr = somarDias(v, CARENCIA_DIAS + 1);
+    var r = { vencimento: v, saiDoAr: saiDoAr, dias: diasEntre(h, v) };
+    if (h >= saiDoAr) r.situacao = "fora";
+    else if (h > v) r.situacao = "carencia";
+    else if (r.dias <= 7) r.situacao = "vence-logo";
+    else r.situacao = "em-dia";
+    return r;
+  }
+  function foraPorVencimento(p) { return p.status === "ativo" && situacaoVencimento(p.vencimento).situacao === "fora"; }
+
+  // ---------------------------------------------------------------------------
   // Clientes: validação e normalização (iguais às regras do banco)
   // ---------------------------------------------------------------------------
   function cpfValido(d) {
@@ -354,6 +388,7 @@
       perfilPublico: function (slug) {
         var p = ler().filter(function (x) { return x.slug === String(slug).toLowerCase(); })[0];
         if (!p) return Promise.resolve(null);
+        if (foraPorVencimento(p)) return Promise.resolve({ status: "inativo" });   // igual a public.perfil_publico
         return Promise.resolve(p.status === "ativo" ? { status: "ativo", dados: p.dados } : { status: p.status });
       },
 
@@ -606,5 +641,10 @@
   db.REDES_CLIENTE = REDES_CLIENTE;
   db.UFS = UFS;
   db.urlPerfil = function (slug) { return urlBase() + "/" + slug; };
+  db.CARENCIA_DIAS = CARENCIA_DIAS;
+  db.hojeBrasilia = hojeBrasilia;
+  db.somarMes = somarMes;
+  db.situacaoVencimento = situacaoVencimento;
+  db.foraPorVencimento = foraPorVencimento;
   window.DB = db;
 })();

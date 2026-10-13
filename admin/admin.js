@@ -26,7 +26,8 @@
   var TEXTO_STATUS = {
     ativo: ["No ar", "O cliente e qualquer pessoa que ler o chaveiro veem a página."],
     inativo: ["Desativado", "Fora do ar. Quem acessar vê \"Perfil temporariamente indisponível\". Nada foi apagado."],
-    rascunho: ["Em configuração", "Ainda não liberado. Quem acessar vê \"Em breve\"."]
+    rascunho: ["Em configuração", "Ainda não liberado. Quem acessar vê \"Em breve\"."],
+    vencido: ["Fora do ar · vencido", "O vencimento passou há mais de " + DB.CARENCIA_DIAS + " dias e a página saiu do ar sozinha. Quem acessar vê \"Perfil temporariamente indisponível\". Nada foi apagado. Renove o vencimento e ela volta na hora."]
   };
 
   // ===========================================================================
@@ -45,10 +46,21 @@
     toast(e && e.amigavel ? e.message : "Algo deu errado: " + (e && e.message || e), true);
   }
   function dataBR(iso) { if (!iso) return ""; var p = String(iso).slice(0, 10).split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
-  function hojeISO() { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
-  function vencido(p) { return p.vencimento && String(p.vencimento).slice(0, 10) < hojeISO(); }
+  // Venceu (em carência ou já fora do ar). Fora do ar por vencimento: DB.foraPorVencimento(p)
+  function vencido(p) { var s = DB.situacaoVencimento(p.vencimento).situacao; return s === "carencia" || s === "fora"; }
+  function statusVisivel(p) { return DB.foraPorVencimento(p) ? "vencido" : p.status; }
   function nomeDe(p) { return (p.dados && p.dados.nome) || (p.cliente && p.cliente.nome) || p.slug; }
   function selo(status) { return el("span", { class: "selo " + status, text: TEXTO_STATUS[status][0] }); }
+  function seloPerfil(p) { return selo(statusVisivel(p)); }
+  // Texto do vencimento na lista e no editor
+  function textoVencimento(p) {
+    var v = DB.situacaoVencimento(p.vencimento);
+    if (v.situacao === "sem") return null;
+    if (v.situacao === "fora") return { classe: "vencido", texto: " Venceu " + dataBR(v.vencimento) + (p.status === "ativo" ? " · fora do ar desde " + dataBR(v.saiDoAr) : "") };
+    if (v.situacao === "carencia") return { classe: "carencia", texto: " Venceu " + dataBR(v.vencimento) + (p.status === "ativo" ? " · sai do ar em " + dataBR(v.saiDoAr) : "") };
+    if (v.situacao === "vence-logo") return { classe: "vence-logo", texto: " Vence " + dataBR(v.vencimento) + (v.dias === 0 ? " (hoje)" : v.dias === 1 ? " (amanhã)" : " (em " + v.dias + " dias)") };
+    return { classe: null, texto: " Vence " + dataBR(v.vencimento) };
+  }
   function uid() { return Math.random().toString(36).slice(2, 10); }
 
   function campoTexto(rotulo, valor, aoMudar, extra) {
@@ -142,6 +154,27 @@
       if (!sim) return null;
       return DB.salvar(p.id, { status: novo }).then(function (r) {
         toast(novo === "ativo" ? "Perfil no ar! ✅" : "Perfil desativado.");
+        return r;
+      });
+    }).catch(function (e) { falhou(e); return null; });
+  }
+
+  // Renova o vencimento por 1 mês, contando do vencimento anterior (ou de hoje, se não havia)
+  function renovar(p) {
+    var base = p.vencimento ? String(p.vencimento).slice(0, 10) : DB.hojeBrasilia();
+    var novo = DB.somarMes(base);
+    var volta = DB.foraPorVencimento(p) && DB.situacaoVencimento(novo).situacao !== "fora";
+    var aindaFora = p.status === "ativo" && DB.situacaoVencimento(novo).situacao === "fora";
+    return confirmar({
+      titulo: "Renovar até " + dataBR(novo) + "?",
+      texto: "O próximo vencimento passa de " + (p.vencimento ? dataBR(base) : "(sem data)") + " para " + dataBR(novo) + "." +
+        (volta ? " A página volta ao ar na hora." : "") +
+        (aindaFora ? " Atenção: essa data ainda passou da carência, então a página continua fora do ar. Renove de novo ou ajuste a data no perfil." : ""),
+      botao: "Renovar", classe: "verde"
+    }).then(function (sim) {
+      if (!sim) return null;
+      return DB.salvar(p.id, { vencimento: novo }).then(function (r) {
+        toast("Renovado até " + dataBR(novo) + (volta ? ". Perfil de volta no ar! ✅" : "."));
         return r;
       });
     }).catch(function (e) { falhou(e); return null; });
@@ -349,14 +382,15 @@
 
   function desenharLista() {
     var todos = estado.perfis;
-    var cont = { ativo: 0, inativo: 0, rascunho: 0 };
-    todos.forEach(function (p) { cont[p.status]++; });
-    $("resumo").textContent = todos.length + " perfis · " + cont.ativo + " no ar · " + cont.inativo + " desativados · " + cont.rascunho + " em configuração";
+    var cont = { ativo: 0, inativo: 0, rascunho: 0, vencido: 0 };
+    todos.forEach(function (p) { cont[statusVisivel(p)]++; });
+    $("resumo").textContent = todos.length + " perfis · " + cont.ativo + " no ar · " + (cont.vencido ? cont.vencido + " fora do ar por vencimento · " : "") +
+      cont.inativo + " desativados · " + cont.rascunho + " em configuração";
 
     var b = estado.busca.trim().toLowerCase();
     var vis = todos.filter(function (p) {
       if (estado.filtro === "vencidos" && !vencido(p)) return false;
-      if (["ativo", "inativo", "rascunho"].indexOf(estado.filtro) >= 0 && p.status !== estado.filtro) return false;
+      if (["ativo", "inativo", "rascunho"].indexOf(estado.filtro) >= 0 && statusVisivel(p) !== estado.filtro) return false;
       if (!b) return true;
       var c = p.cliente || {};
       return [p.slug, c.nome, c.telefone, c.whatsapp, c.email, p.dados && p.dados.nome].join(" ").toLowerCase().indexOf(b) >= 0;
@@ -375,11 +409,13 @@
       var foto = p.dados && p.dados.foto;
       var meta = [el("a", { href: url, target: "_blank", rel: "noopener" }, [icone("fa-solid fa-link"), " /" + p.slug])];
       if (p.cliente) meta.push(el("a", { href: "#/cliente/" + p.cliente.id }, [icone("fa-regular fa-user"), " " + p.cliente.nome]));
-      if (p.vencimento) meta.push(el("span", { class: vencido(p) ? "vencido" : null }, [icone("fa-regular fa-calendar"), (vencido(p) ? " Venceu " : " Vence ") + dataBR(p.vencimento)]));
+      var tv = textoVencimento(p);
+      if (tv) meta.push(el("span", { class: tv.classe }, [icone("fa-regular fa-calendar"), tv.texto]));
 
       var acoes = [
         el("a", { class: "btn pequeno", href: "#/perfil/" + p.id }, [icone("fa-solid fa-pen"), " Editar"])
       ];
+      if (p.status !== "rascunho" && tv && tv.classe) acoes.push(el("button", { class: "btn pequeno verde-leve", type: "button", title: "Somar 1 mês ao vencimento", onclick: function () { renovar(p).then(atualizarItem); } }, [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
       if (p.status === "ativo") acoes.push(el("button", { class: "btn pequeno perigo-leve", type: "button", onclick: function () { mudarStatus(p, "inativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
       else acoes.push(el("button", { class: "btn pequeno", type: "button", onclick: function () { mudarStatus(p, "ativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-play"), p.status === "rascunho" ? " Liberar" : " Reativar"]));
       acoes.push(
@@ -393,7 +429,7 @@
       alvo.appendChild(el("div", { class: "item" }, [
         foto ? el("img", { class: "item-foto", src: foto, alt: "" }) : el("div", { class: "item-foto" }, [icone("fa-regular fa-user")]),
         el("div", { class: "item-info" }, [
-          el("div", { class: "item-nome" }, [nomeDe(p), selo(p.status)]),
+          el("div", { class: "item-nome" }, [nomeDe(p), seloPerfil(p)]),
           el("div", { class: "item-meta" }, meta)
         ]),
         el("div", { class: "item-acoes" }, acoes)
@@ -571,7 +607,7 @@
   function cabecalhoEditor() {
     var p = estado.ed.p;
     $("edTitulo").textContent = nomeDe(p);
-    var s = selo(p.status);
+    var s = seloPerfil(estado.ed.orig);
     $("edSelo").replaceWith(s);
     s.id = "edSelo";
     document.title = nomeDe(p) + " · Painel";
@@ -591,8 +627,13 @@
     cabecalhoEditor();
 
     // --- Status e link ---------------------------------------------------------
-    var st = TEXTO_STATUS[p.status];
+    var stVis = statusVisivel(ed.orig) === "vencido" ? "vencido" : p.status;
+    var st = TEXTO_STATUS[stVis];
     var botoesStatus = el("div", { class: "status-botoes" });
+    var vOrig = DB.situacaoVencimento(ed.orig.vencimento);
+    var avisoVenc = p.status === "ativo" && vOrig.situacao === "carencia"
+      ? el("p", { class: "aviso-vencimento" }, [icone("fa-solid fa-triangle-exclamation"), " Venceu em " + dataBR(vOrig.vencimento) + ". Se não for renovado, sai do ar sozinho em " + dataBR(vOrig.saiDoAr) + "."])
+      : null;
     function acaoStatus(novo) {
       var antes = estado.ed.sujo ? salvar() : Promise.resolve(true);
       antes.then(function (ok) {
@@ -606,6 +647,17 @@
     }
     if (p.status === "rascunho") botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () { acaoStatus("ativo"); } }, [icone("fa-solid fa-rocket"), " Liberar para o cliente"]));
     if (p.status === "inativo") botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () { acaoStatus("ativo"); } }, [icone("fa-solid fa-circle-play"), " Reativar"]));
+    if (p.status === "ativo" && (vOrig.situacao === "fora" || vOrig.situacao === "carencia")) botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () {
+      var antes = estado.ed.sujo ? salvar() : Promise.resolve(true);
+      antes.then(function (ok) {
+        if (!ok) return;
+        renovar(estado.ed.orig).then(function (r) {
+          if (!r || !estado.ed) return;
+          estado.ed.p.vencimento = estado.ed.orig.vencimento = r.vencimento;
+          desenharEditor();
+        });
+      });
+    } }, [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
     if (p.status === "ativo") botoesStatus.appendChild(el("button", { class: "btn perigo", type: "button", onclick: function () { acaoStatus("inativo"); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
 
     var slugInput = el("input", { type: "text", maxlength: "40" });
@@ -618,10 +670,11 @@
     var url = DB.urlPerfil(ed.orig.slug);
 
     form.appendChild(cartao("fa-solid fa-signal", "Situação e link", [
-      el("div", { class: "status-caixa " + p.status }, [
+      el("div", { class: "status-caixa " + stVis }, [
         el("div", {}, [el("strong", { text: st[0] }), el("p", { text: st[1] })]),
         botoesStatus
       ]),
+      avisoVenc,
       el("label", { style: "margin-top:16px" }, ["Link do perfil (gravado no chaveiro)",
         el("div", { class: "link-publico" }, [el("span", { text: DB.urlPerfil("") }), slugInput]),
         el("div", { class: "dica", text: p.status === "rascunho" ? "Pode ajustar à vontade enquanto estiver em configuração." : "⚠️ Se mudar, o chaveiro já gravado com o link antigo para de funcionar." })
@@ -821,8 +874,7 @@
       el("div", { class: "grade" }, [
         el("label", { class: "todo" }, ["Cliente", selCliente,
           el("div", { class: "status-botoes", style: "margin-top:8px" }, [linkCliente, btnImportar, el("a", { class: "btn pequeno fantasma", href: "#/cliente/novo" }, [icone("fa-solid fa-user-plus"), " Novo cliente"])])]),
-        campoTexto("Próximo vencimento", p.vencimento ? String(p.vencimento).slice(0, 10) : "", function (v) { p.vencimento = v || null; marcarSujo(); },
-          { tipo: "date", dica: "Perfis vencidos ficam destacados na lista (filtro \"Vencidos\")." }),
+        campoVencimento(p),
         campoTexto("Observações", p.observacoes, function (v) { p.observacoes = v; marcarSujo(); }, { classe: "todo", multilinha: true, ph: "Forma de pagamento, nº do chaveiro, combinados..." })
       ])
     ]));
@@ -923,6 +975,22 @@
     caixa.addEventListener("drop", function (e) { enviar(e.dataTransfer.files[0]); });
     atualizar();
     return caixa;
+  }
+
+  // Campo "Próximo vencimento" do editor, com o botão que soma 1 mês (vale ao salvar)
+  function campoVencimento(p) {
+    var campo = campoTexto("Próximo vencimento", p.vencimento ? String(p.vencimento).slice(0, 10) : "", function (v) { p.vencimento = v || null; marcarSujo(); },
+      { tipo: "date", dica: "Depois do vencimento, a página continua no ar por mais " + DB.CARENCIA_DIAS + " dias e então sai do ar sozinha. Ao renovar, volta na hora. Sem data, nunca sai do ar." });
+    var input = campo.querySelector("input");
+    var btn = el("button", { class: "btn pequeno", type: "button", title: "Soma 1 mês ao vencimento atual (ou a hoje, se estiver vazio)", onclick: function () {
+      p.vencimento = DB.somarMes(p.vencimento ? String(p.vencimento).slice(0, 10) : DB.hojeBrasilia());
+      input.value = p.vencimento;
+      marcarSujo();
+      toast("Vencimento: " + dataBR(p.vencimento) + ". Clique em Salvar para valer.");
+    } }, [icone("fa-solid fa-rotate-right"), " +1 mês"]);
+    var depois = input.nextSibling;   // a dica, que continua embaixo
+    campo.insertBefore(el("div", { class: "campo-com-botao" }, [input, btn]), depois);
+    return campo;
   }
 
   // ---------------------------------------------------------------------------
@@ -1234,7 +1302,7 @@
     if (cl.id) {
       var itens = cl.perfis.map(function (p) {
         return el("div", { class: "perfil-do-cliente" }, [
-          el("a", { href: "#/perfil/" + p.id }, [nomeDe(p)]), selo(p.status),
+          el("a", { href: "#/perfil/" + p.id }, [nomeDe(p)]), seloPerfil(p),
           el("span", { class: "sub", text: "/" + p.slug })
         ]);
       });

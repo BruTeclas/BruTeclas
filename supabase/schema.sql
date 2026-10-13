@@ -142,14 +142,29 @@ drop trigger if exists perfis_updated_at on public.perfis;
 create trigger perfis_updated_at before update on public.perfis
   for each row execute function public.tocar_updated_at();
 
+-- Vencimento (v1.1.0): passou do vencimento + 3 dias de carência, no horário de Brasília.
+-- Sem vencimento, nunca vence. Mantenha a carência igual a CARENCIA_DIAS em js/db.js.
+create or replace function public.perfil_vencido(p_vencimento date)
+returns boolean
+language sql stable
+set search_path = ''
+as $$
+  select p_vencimento is not null
+     and (now() at time zone 'America/Sao_Paulo')::date > p_vencimento + 3;
+$$;
+revoke all on function public.perfil_vencido(date) from public;
+grant execute on function public.perfil_vencido(date) to anon, authenticated;
+
 -- Leitura pública: só pelo link exato, e só devolve o conteúdo se estiver no ar.
--- Visitantes não conseguem listar perfis nem ver dados internos ou de clientes.
+-- Perfil vencido responde como desativado. Visitantes não conseguem listar perfis
+-- nem ver dados internos ou de clientes.
 create or replace function public.perfil_publico(p_slug text)
 returns jsonb
 language sql stable security definer
 set search_path = ''
 as $$
   select case
+           when status = 'ativo' and public.perfil_vencido(vencimento) then jsonb_build_object('status', 'inativo')
            when status = 'ativo' then jsonb_build_object('status', status, 'dados', dados)
            else jsonb_build_object('status', status)
          end

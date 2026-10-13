@@ -101,6 +101,14 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .item-meta a { color: var(--texto2); text-decoration: none; }
 .item-meta a:hover { color: var(--primaria); text-decoration: underline; }
 .item-meta .vencido { color: var(--vermelho); font-weight: 600; }
+.item-meta .carencia { color: var(--amarelo); font-weight: 600; }
+.item-meta .vence-logo { color: var(--amarelo); }
+.btn.verde-leve { color: var(--verde); }
+.btn.verde-leve:hover { background: var(--verde-claro); }
+.aviso-vencimento { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--amarelo-claro); color: var(--amarelo); font-size: .85rem; font-weight: 600; }
+.campo-com-botao { display: flex; gap: 8px; align-items: center; }
+.campo-com-botao input { flex: 1; min-width: 0; }
+.campo-com-botao .btn { flex: none; }
 .item-acoes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 760px) {
   .item { grid-template-columns: 44px 1fr; }
@@ -115,6 +123,7 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .selo.ativo { background: var(--verde-claro); color: var(--verde); }
 .selo.inativo { background: var(--vermelho-claro); color: var(--vermelho); }
 .selo.rascunho { background: var(--amarelo-claro); color: var(--amarelo); }
+.selo.vencido { background: var(--vermelho-claro); color: var(--vermelho); }
 
 /* Editor */
 .editor { max-width: 1240px; margin: 0 auto; padding: 18px 20px 80px; }
@@ -147,6 +156,7 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .status-caixa.ativo { background: var(--verde-claro); }
 .status-caixa.inativo { background: var(--vermelho-claro); }
 .status-caixa.rascunho { background: var(--amarelo-claro); }
+.status-caixa.vencido { background: var(--vermelho-claro); }
 .status-caixa p { margin: 2px 0 0; font-size: .85rem; color: var(--texto2); }
 .status-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
 
