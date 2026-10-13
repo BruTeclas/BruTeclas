@@ -28,6 +28,12 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - os 21 arquivos no ar conferidos contra o pacote;
   - o site público não tem mais nenhum código do painel;
   - a mudança do banco foi aplicada depois, e a leitura como visitante foi conferida.
+- **Conferida no ar em 13/10/2026**, de fora do servidor:
+  - 27 endereços, com redirecionamentos e bloqueios;
+  - cabeçalhos: uma CSP por pedido, a certa para cada parte;
+  - consulta real ao banco com a chave pública;
+  - navegador no perfil (fotos e QR do Pix), no link inexistente, no login do painel e na página de nova senha;
+  - nenhum erro e nenhuma violação de CSP.
 - **Testada antes num Apache montado como a Hostinger**, com o site em `public_html` e o painel em `public_html/painel-admin`:
   - cada pedido recebe uma única lista de permissões (CSP);
   - o painel só abre pelo subdomínio;
