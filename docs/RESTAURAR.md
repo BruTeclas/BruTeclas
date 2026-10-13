@@ -47,8 +47,9 @@ git checkout versao-X.Y.Z
 3. Autorize o seu e-mail com a primeira linha comentada no fim do `schema.sql` e crie o usuário em *Authentication → Users → Add user*.
 4. Refaça as configurações do painel, conforme a seção "Supabase: o que falta" do [README](../README.md): cadastro público e anônimo desligados, "Secure password change" ligado, URL do site, modelos de e-mail.
 5. Atualize `supabaseUrl` e `supabaseAnonKey` em `js/config.js`, com a chave **publicável** do projeto novo.
-   Troque também o endereço antigo do Supabase (`vomhyqdvxhkovykipxpg.supabase.co`) pelo novo na linha `Content-Security-Policy` do `.htaccess`. Sem isso, o navegador bloqueia o login e as fotos.
-6. Importe os CSVs de `clientes` e `perfis`, se tiver.
+   Troque também o endereço antigo do Supabase (`vomhyqdvxhkovykipxpg.supabase.co`) pelo novo na linha `Content-Security-Policy` dos três `.htaccess` (raiz, `admin/` e `cliente/`). Sem isso, o navegador bloqueia o login e as fotos.
+6. Publique a função `supabase/functions/cliente-imagem` (v1.3.0) com a verificação de JWT desligada. Ela recebe as fotos que o cliente envia.
+7. Importe os CSVs de `clientes` e `perfis`, se tiver.
 
 ## 3. Publicar o site na Hostinger
 
@@ -56,9 +57,9 @@ git checkout versao-X.Y.Z
 python3 publicar/montar-pacote.py      # gera publicar/nfcliente-site.zip
 ```
 
-Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**. Envie o `nfcliente-site.zip` para `public_html` e extraia. Os dois `.htaccess` vão junto: o da raiz faz `/<link>` abrir o perfil, e o de `painel-admin/` cuida do painel.
+Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**. Envie o `nfcliente-site.zip` para `public_html` e extraia. Os `.htaccess` vão junto: o da raiz faz `/<link>` abrir o perfil, o de `painel-admin/` cuida do painel e o de `painel-cliente/` cuida da página do cliente.
 
-O painel precisa do subdomínio `admin.nfcliente.com.br` apontando para a pasta `public_html/painel-admin`. Na Hostinger, crie em **Domínios → Subdomínios**, com *Pasta personalizada* `painel-admin`.
+O painel precisa do subdomínio `admin.nfcliente.com.br` apontando para a pasta `public_html/painel-admin`. Na Hostinger, crie em **Domínios → Subdomínios**, com *Pasta personalizada* `painel-admin`. Desde a v1.3.0, a página do cliente precisa do subdomínio `cliente.nfcliente.com.br`, com a pasta `painel-cliente`.
 
 Antes de enviar, se quiser conferir no computador: `node ferramentas/servidor-local.js` e abra `http://admin.localhost:3000/`.
 

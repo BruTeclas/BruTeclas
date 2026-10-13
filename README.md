@@ -12,11 +12,15 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
                 └──────────────────────────────┘          │
                                                            ▼
  Você → admin.nfcliente.com.br (login) ──────────► Supabase (banco + fotos)
-        cria, edita, ativa, desativa, exclui
+        cria, edita, ativa, desativa, exclui               ▲
+                                                           │
+ Cliente → cliente.nfcliente.com.br/#código (PIN) ─────────┘
+           edita só o próprio perfil e salva
 ```
 
 - **Site público:** arquivos estáticos na Hostinger, em `nfcliente.com.br`. As páginas dos perfis não têm nenhum código de login (veja *Hospedagem*).
 - **Painel:** `admin.nfcliente.com.br`, um endereço só dele. O antigo `nfcliente.com.br/admin` leva para lá.
+- **Página do cliente:** `cliente.nfcliente.com.br`. Abre só pelo link que você envia e só edita aquele perfil (veja *Link para o cliente editar*).
 - **Banco e fotos:** o [Supabase](https://supabase.com) guarda clientes, perfis, imagens e o seu login. Hoje está no plano gratuito (veja *Plano do Supabase*).
 - O endereço do chaveiro **nunca muda**. Você altera links, fotos e situação pelo painel e a página atualiza na hora.
 
@@ -76,6 +80,22 @@ Ao criar um perfil para um cliente, a página já nasce com os contatos do cadas
 
 O **endereço não entra sozinho**. Num chaveiro perdido ou numa coleira de pet, quem acha teria a chave **e** o endereço da casa. Para colocar o botão "Como chegar", marque **"Incluir também o endereço"** ao criar o perfil. A caixa vem desmarcada e só aparece quando o cadastro tem rua e cidade e "Já colocar na página os contatos" está marcada. Depois, também dá para adicionar um link do Google Maps no editor.
 
+### Link para o cliente editar (v1.3.0)
+
+O próprio cliente pode ajustar a página dele, sem acesso ao painel.
+
+1. No painel, abra o perfil. No cartão **"Link para o cliente editar"**, clique em **Gerar link para o cliente**.
+2. Na janela que abre, clique em **Copiar link** ou em **Enviar pelo WhatsApp**. A mensagem vai pronta para o WhatsApp do cadastro.
+3. O cliente abre o link e digita o **PIN**: os **4 últimos dígitos do WhatsApp ou do telefone** do cadastro.
+
+- **Para quem:** só para perfil **no ar**, **dentro do vencimento** e **ligado a um cliente**. Sem isso, o cartão explica o que falta.
+- **Validade:** o link vale até você clicar em **Revogar link**. **Gerar novo link** cancela o anterior. O PIN é pedido **toda vez** que o link é aberto, e cada acesso dura 2 horas.
+- **Bloqueio:** 5 PINs errados bloqueiam o link por 30 minutos.
+- **O que o cliente muda:** aparência, informações da página, links e botões extras, incluindo foto e capa. Situação, vencimento, endereço do link e cadastro continuam só com você.
+- **Quando vai ao ar:** só quando o cliente clica em **Salvar**.
+- **Desfazer:** cada alteração, sua ou do cliente, guarda a versão anterior. No editor, o cartão **"Histórico de alterações"** mostra as últimas 15. **Carregar** põe a versão no editor; ela só vai ao ar quando você salvar.
+- **Perfil desativado ou vencido:** o link para de funcionar na hora e volta a valer quando o perfil voltar ao ar.
+
 ### Acesso ao painel
 
 - **Login** só para administradores, com mensagens claras para senha errada, e-mail não confirmado e excesso de tentativas.
@@ -96,6 +116,7 @@ node ferramentas/servidor-local.js          # usa o Supabase de verdade (dados r
 |---|---|
 | `http://localhost:3000/<link>` | `nfcliente.com.br/<link>` (perfil) |
 | `http://admin.localhost:3000/` | `admin.nfcliente.com.br` (painel) |
+| `http://cliente.localhost:3000/#<código>` | `cliente.nfcliente.com.br` (página do cliente). Atalho: `http://localhost:3000/cliente/#<código>` |
 | `http://localhost:3000/admin/` | Atalho só do computador: o mesmo painel no endereço do site. Use no modo demonstração, em que painel e perfis precisam do mesmo endereço |
 
 O servidor local aplica as mesmas regras e cabeçalhos de segurança dos dois `.htaccess`: o da raiz para o site e o de `admin/` para o painel. Isso inclui `/<link>`, CSP e o bloqueio de arquivos internos. Assim, o que funciona nele funciona na Hostinger.
@@ -159,30 +180,32 @@ O projeto está no **plano gratuito**:
 - **Cotas:** há limite de tráfego (5 GB por mês, contando as fotos baixadas pelos visitantes) e de espaço para fotos (1 GB). Acompanhe em **Settings → Usage**.
 - **Para não depender disso:** o **plano Pro** não pausa, tem backup diário e permite um limite de gastos (*spend cap*).
 
-## Hospedagem (Hostinger: nfcliente.com.br e admin.nfcliente.com.br)
+## Hospedagem (Hostinger: nfcliente.com.br, admin. e cliente.)
 
-O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL ativo nos dois endereços e redirecionamento para HTTPS.
+O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL ativo nos três endereços e redirecionamento para HTTPS.
 
 | Endereço | Pasta no servidor | Regras |
 |---|---|---|
 | `nfcliente.com.br` (site público) | `public_html` | `.htaccess` da raiz |
 | `admin.nfcliente.com.br` (painel) | `public_html/painel-admin` (subdomínio) | `admin/.htaccess`, publicado como `painel-admin/.htaccess` |
+| `cliente.nfcliente.com.br` (página do cliente) | `public_html/painel-cliente` (subdomínio) | `cliente/.htaccess`, publicado como `painel-cliente/.htaccess` |
 
 - **Regras de endereço do site:**
   - `nfcliente.com.br/<link>` abre o perfil;
   - `/admin/...` leva para `admin.nfcliente.com.br/...` com os mesmos parâmetros, então links antigos e e-mails de senha continuam valendo;
   - tira o `www` e bloqueia arquivos que não são do site;
-  - `/painel-admin` dá 404.
+  - `/painel-admin` e `/painel-cliente` dão 404.
 - **Regras do painel:**
   - só abre pelo endereço `admin.nfcliente.com.br`;
   - bloqueia arquivos PHP, como a página padrão da Hostinger, e arquivos ocultos;
   - pede aos buscadores para não indexar.
+- **Regras da página do cliente:** as mesmas do painel, mas só pelo endereço `cliente.nfcliente.com.br` e com conexão só com o Supabase.
 - **Cabeçalhos de segurança:** o `.htaccess` também envia:
   - **HSTS:** o navegador passa a usar sempre HTTPS;
   - **CSP:** a lista de onde o site pode carregar scripts, estilos, fotos e conexões.
   
   Se um dia o site precisar de outro serviço externo (por exemplo, fotos de outro endereço ou um script de estatísticas), inclua esse endereço na linha `Content-Security-Policy`. Sem isso, o navegador bloqueia.
-- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. O pacote tem o site público na raiz e o painel em `painel-admin/`. README, SQL, modelos de e-mail, `docs/` e `ferramentas/` ficam de fora.
+- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. O pacote tem o site público na raiz, o painel em `painel-admin/` e a página do cliente em `painel-cliente/`. README, SQL, modelos de e-mail, `docs/` e `ferramentas/` ficam de fora.
 - **O site público não recebe o código do painel:** nem o `db.js` nem a biblioteca de login do Supabase. As páginas dos perfis usam só `js/publico.js`.
 
 ### Atualizar o site
@@ -237,7 +260,10 @@ admin/                Painel com login (publicado em admin.nfcliente.com.br, pas
   index.html, admin.js, admin.css
   redefinir-senha.html, redefinir-senha.js  Página do link "Esqueci minha senha" e do convite
   .htaccess           Regras e cabeçalhos de segurança do painel
-js/config.js          Endereço do Supabase, chave pública e domínio
+cliente/              Página do cliente (publicada em cliente.nfcliente.com.br, pasta painel-cliente)
+  index.html, cliente.js, .htaccess
+js/config.js          Endereço do Supabase, chave pública e domínios
+js/editor-perfil.js   Editor do perfil, usado pelo painel e pela página do cliente
 js/db.js              Acesso ao banco (Supabase ou modo demonstração). Só o painel usa
 js/publico.js         Leitura de um perfil pela página pública (uma consulta, sem login)
 js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
@@ -245,6 +271,8 @@ js/pagina-perfil.js   Carrega o perfil pelo link e mostra o aviso "Perfil indisp
 js/lib/               Bibliotecas de terceiros com versão fixa (Supabase e QR Code) e suas licenças
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
+supabase/versoes/     Mudanças do banco de cada versão e os scripts para desfazer
+supabase/functions/   Função cliente-imagem: recebe as fotos enviadas pelo cliente
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
 docs/RESTAURAR.md     Como voltar a uma versão anterior ou restaurar tudo do zero
 docs/HISTORICO.md     O que mudou em cada versão
@@ -272,12 +300,16 @@ vercel.json           Rotas para a Vercel
   - têm regras próprias e mais rígidas: nenhum formulário, nenhuma moldura e conexão só com o Supabase.
   - Ao abrir, elas também apagam qualquer login antigo do painel que tenha ficado guardado no endereço do site.
 - **Resposta única:** link inexistente, desativado, vencido ou em configuração recebem a mesma resposta. Não dá para descobrir quais links existem.
+- **Link do cliente:**
+  - o banco guarda só o código embaralhado, e o link não dá acesso sem o PIN;
+  - o cliente nunca recebe login nem acesso direto ao banco: cada ação passa por funções que conferem o acesso e só mexem naquele perfil;
+  - tudo o que ele salva é conferido no banco: só os campos do editor, endereços `http(s)`, ícones da lista e fotos do próprio perfil;
+  - fotos: até 3 MB, só JPG, PNG ou WebP (o conteúdo é conferido, não só o nome do arquivo), no máximo 30 por acesso.
 - **Endereço do cliente:** só vai para a página se você marcar a caixa (veja *Clientes*).
 
 ## Próximas ideias
 
 - **Estatísticas:** quantas vezes cada chaveiro foi lido.
-- **Login do cliente**, para ele editar os próprios links (plano "Pro").
 - **Desativação automática** de perfis com vencimento atrasado há X dias.
 - **Cobrança automática:** link do Mercado Pago ou Asaas que reativa o perfil ao pagar.
 - **Modelos prontos** por segmento: salão, restaurante, pet (coleira), emergência médica, corretor.

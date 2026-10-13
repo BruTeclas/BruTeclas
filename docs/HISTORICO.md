@@ -12,15 +12,28 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
-## Planejado
+## v1.3.0 · 13/10/2026: link para o cliente editar o próprio perfil (ponto de restauração `versao-1.3.0`)
 
-- **v1.3.0: link de configuração para o cliente**
-  - **Para quem:** só para cliente ativo com perfil no ar.
-  - **Validade:** vale até você revogar. Gerar um link novo cancela o anterior.
-  - **PIN:** pede o PIN **toda vez** que abre, com os **4 últimos dígitos do telefone cadastrado**. Tentativas erradas em sequência bloqueiam o link por um tempo.
-  - **Quando vai ao ar:** as alterações só valem quando o cliente clica em **Salvar**.
-  - **Histórico:** cada vez que o cliente salva, a versão anterior fica guardada, e você pode desfazer.
-  - **Vencimento:** o link para de funcionar se o perfil estiver desativado ou vencido (v1.1.0).
+- **Situação:** banco e função de fotos já no ar; site aguardando publicação.
+- **Link para o cliente editar:**
+  - no editor do perfil, o cartão **"Link para o cliente editar"** gera o link, com os botões **Copiar link** e **Enviar pelo WhatsApp**, e revoga;
+  - só para perfil no ar, dentro do vencimento e ligado a um cliente;
+  - vale até ser revogado; gerar um novo cancela o anterior.
+- **Página do cliente em `cliente.nfcliente.com.br`**, na pasta `public_html/painel-cliente`:
+  - pede o PIN toda vez: os 4 últimos dígitos do WhatsApp ou do telefone do cadastro;
+  - 5 PINs errados bloqueiam o link por 30 minutos, e cada acesso dura 2 horas;
+  - mostra só aparência, informações, links e botões extras, com prévia;
+  - as alterações vão ao ar só quando o cliente clica em **Salvar**;
+  - se o acesso expirar no meio da edição, pede o PIN de novo sem perder o que foi feito.
+- **Histórico de alterações:** cada alteração, do painel ou do cliente, guarda a versão anterior. O cartão no editor mostra as últimas 15, e **Carregar** traz uma delas de volta para o editor.
+- **Editor compartilhado:** o painel e a página do cliente usam o mesmo editor (`js/editor-perfil.js`).
+- **Banco: mudou.**
+  - Tabelas `links_cliente`, `sessoes_cliente` e `perfis_historico`, e funções que conferem o PIN, o acesso e tudo o que o cliente salva.
+  - Script: `supabase/versoes/v1.3.0.sql`, também incluído no `schema.sql`.
+  - Para desfazer: `supabase/versoes/v1.3.0-desfazer.sql`.
+- **Função nova no Supabase:** `cliente-imagem` recebe as fotos do cliente e confere tamanho, tipo e conteúdo. Ela fica em `supabase/functions/`.
+- **Links reservados:** `cliente`, `painel-cliente`, `editar`, `docs` e `ferramentas`.
+- **Servidor local:** a página do cliente abre em `http://cliente.localhost:3000/#<código>`.
 
 ## v1.2.0 · 13/10/2026: página pública blindada e painel em endereço próprio (ponto de restauração `versao-1.2.0`)
 
