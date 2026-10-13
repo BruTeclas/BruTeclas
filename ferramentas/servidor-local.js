@@ -71,8 +71,13 @@ http.createServer(function (req, res) {
     // admin.localhost: como admin.nfcliente.com.br (admin/.htaccess)
     const h = cabecalhos(path.join(PAINEL, ".htaccess"));
     if (/(^|\/)\.|\.php$/.test(url)) return naoAchou(h);
-    const antigo = /^\/admin(?:\/(.*))?$/.exec(url);
-    if (antigo) { res.writeHead(301, Object.assign({ Location: "/" + (antigo[1] || "") + (req.url.split("?")[1] ? "?" + req.url.split("?")[1] : "") }, h)); return res.end(); }
+    const antigo = /^\/admin(?:\/+(.*))?$/.exec(url);
+    if (antigo) {
+      // Como no .htaccess: destino sempre neste endereço ("/admin//outro-site" não sai daqui)
+      const q = req.url.indexOf("?") >= 0 ? req.url.slice(req.url.indexOf("?")) : "";
+      res.writeHead(301, Object.assign({ Location: "http://" + req.headers.host + "/" + (antigo[1] || "").replace(/^\/+/, "") + q }, h));
+      return res.end();
+    }
     const f = arquivoDoPainel(url);
     return f ? enviar(res, f, h) : naoAchou(h);
   }

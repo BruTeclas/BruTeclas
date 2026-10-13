@@ -21,8 +21,9 @@ AddDefaultCharset utf-8
   RewriteRule (^|/)\. - [R=404,L]
   RewriteRule \.php$ - [R=404,L]
 
-  # Endereços antigos (/admin/...), inclusive os links dos e-mails de senha: mesma página, sem o /admin
-  RewriteRule ^admin(?:/(.*))?$ /$1 [L,R=301]
+  # Endereços antigos (/admin/...), inclusive os links dos e-mails de senha: mesma página, sem o /admin.
+  # Destino sempre com o endereço completo, para "/admin//outro-site" nunca levar a outro site.
+  RewriteRule ^admin(?:/+(.*))?$ https://admin.nfcliente.com.br/$1 [L,R=301]
 </IfModule>
 
 <IfModule mod_headers.c>

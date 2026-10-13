@@ -22,7 +22,7 @@ AddDefaultCharset utf-8
 
   # O painel mudou para admin.nfcliente.com.br. Links antigos e os dos e-mails de senha
   # (/admin/redefinir-senha.html?token_hash=...) continuam funcionando: vão para lá com os mesmos parâmetros.
-  RewriteRule ^admin(?:/(.*))?$ https://admin.nfcliente.com.br/$1 [L,R=301]
+  RewriteRule ^admin(?:/+(.*))?$ https://admin.nfcliente.com.br/$1 [L,R=301]
 
   # A pasta do painel não abre pelo endereço do site público
   RewriteCond %{HTTP_HOST} !^admin\. [NC]
