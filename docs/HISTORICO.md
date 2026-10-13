@@ -12,6 +12,14 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
+## v1.4.0 · 13/10/2026: foto do perfil na lista de clientes (ponto de restauração `versao-1.4.0`)
+
+- **Foto do cliente:** na aba Clientes, a bolinha com as iniciais passa a mostrar a foto do perfil ligado ao cliente.
+  - Com mais de um perfil, vale a do perfil no ar; se nenhum estiver no ar, a do primeiro perfil com foto.
+  - Sem foto, sem perfil ou se a imagem não carregar: continuam as iniciais.
+  - A foto vem do perfil; o cadastro do cliente não ganhou campo de foto.
+- **Banco:** não mudou. A lista de clientes passou a buscar também a situação e a foto dos perfis de cada cliente.
+
 ## v1.3.0 · 13/10/2026: link para o cliente editar o próprio perfil (ponto de restauração `versao-1.3.0`)
 
 - **Publicada em 13/10/2026:**

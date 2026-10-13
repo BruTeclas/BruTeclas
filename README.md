@@ -75,6 +75,7 @@ Cada cliente tem um cadastro próprio, separado da página. Um cliente pode ter 
 - **Endereço:** o CEP preenche rua, bairro, cidade e UF.
 - **Redes sociais e site.**
 - **Plano, valor e observações.**
+- **Foto na lista:** a bolinha do cliente mostra a foto do perfil ligado a ele. Com mais de um perfil, vale a do perfil no ar; se nenhum estiver no ar, a do primeiro perfil com foto. Sem foto, aparecem as iniciais. O cadastro do cliente não tem foto própria.
 
 Ao criar um perfil para um cliente, a página já nasce com os contatos do cadastro: WhatsApp, e-mail, redes e site. No editor, o botão **"Trazer contatos do cadastro"** completa o que faltar.
 

@@ -953,8 +953,15 @@
       if (cidadeUF(c)) meta.push(el("span", {}, [icone("fa-solid fa-location-dot"), " " + cidadeUF(c)]));
       if (c.plano || c.valor_mensal != null) meta.push(el("span", {}, [icone("fa-regular fa-credit-card"), " " + [c.plano, c.valor_mensal != null ? "R$ " + fmtValor(c.valor_mensal) : ""].filter(Boolean).join(" · ")]));
       var iniciais = c.nome.replace(/\(.*?\)/g, "").trim().split(/\s+/).map(function (x) { return x[0]; }).slice(0, 2).join("").toUpperCase();
+      // Foto do perfil ligado ao cliente; sem foto (ou se ela não carregar), as iniciais
+      var bolinha = el("div", { class: "item-foto iniciais", text: iniciais });
+      if (/^(https:\/\/|data:image\/)/.test(c.foto_perfil || "")) {
+        var img = el("img", { class: "item-foto", src: c.foto_perfil, alt: "" }), so = bolinha;
+        img.addEventListener("error", function () { if (img.parentNode) img.parentNode.replaceChild(so, img); });
+        bolinha = img;
+      }
       alvo.appendChild(el("div", { class: "item" }, [
-        el("div", { class: "item-foto iniciais", text: iniciais }),
+        bolinha,
         el("div", { class: "item-info" }, [
           el("div", { class: "item-nome" }, [c.nome, el("span", { class: "selo neutro", text: c.total_perfis + (c.total_perfis === 1 ? " perfil" : " perfis") })]),
           el("div", { class: "item-meta" }, meta)

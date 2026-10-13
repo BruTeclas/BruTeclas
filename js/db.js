@@ -89,6 +89,15 @@
   }
   function foraPorVencimento(p) { return p.status === "ativo" && situacaoVencimento(p.vencimento).situacao === "fora"; }
 
+  // Foto do cliente na lista de clientes: a do perfil no ar; se nenhum estiver no ar, a do primeiro perfil com foto.
+  // perfis: [{ status, vencimento, created_at, foto }]
+  function fotoDoCliente(perfis) {
+    var comFoto = perfis.filter(function (p) { return p.foto; })
+      .sort(function (a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); });
+    var noAr = comFoto.filter(function (p) { return p.status === "ativo" && !foraPorVencimento(p); })[0];
+    return (noAr || comFoto[0] || {}).foto || "";
+  }
+
   // ---------------------------------------------------------------------------
   // Clientes: validação e normalização (iguais às regras do banco)
   // ---------------------------------------------------------------------------
@@ -406,7 +415,10 @@
       listarClientes: function () {
         var perfis = ler();
         return Promise.resolve(lerClientes().map(function (c) {
-          return Object.assign({}, c, { total_perfis: perfis.filter(function (p) { return p.cliente_id === c.id; }).length });
+          var dele = perfis.filter(function (p) { return p.cliente_id === c.id; });
+          return Object.assign({}, c, { total_perfis: dele.length, foto_perfil: fotoDoCliente(dele.map(function (p) {
+            return { status: p.status, vencimento: p.vencimento, created_at: p.created_at, foto: p.dados && p.dados.foto };
+          })) });
         }).sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt-BR"); }));
       },
       obterCliente: function (id) { return Promise.resolve(lerClientes().filter(function (c) { return c.id === id; })[0] || null); },
@@ -601,11 +613,12 @@
       },
 
       listarClientes: function () {
-        return sb.from("clientes").select("*, perfis(count)").order("nome").then(function (r) {
+        // Com os perfis de cada cliente: só o necessário para contar e escolher a foto da lista
+        return sb.from("clientes").select("*, perfis(status, vencimento, created_at, foto:dados->>foto)").order("nome").then(function (r) {
           return (checar(r, "cliente") || []).map(function (c) {
-            var t = c.perfis && c.perfis[0] ? c.perfis[0].count : 0;
+            var ps = Array.isArray(c.perfis) ? c.perfis : [];
             delete c.perfis;
-            return Object.assign(c, { total_perfis: t });
+            return Object.assign(c, { total_perfis: ps.length, foto_perfil: fotoDoCliente(ps) });
           });
         });
       },
