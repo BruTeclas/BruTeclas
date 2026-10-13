@@ -155,21 +155,20 @@ $$;
 revoke all on function public.perfil_vencido(date) from public;
 grant execute on function public.perfil_vencido(date) to anon, authenticated;
 
--- Leitura pública: só pelo link exato, e só devolve o conteúdo se estiver no ar.
--- Perfil vencido responde como desativado. Visitantes não conseguem listar perfis
--- nem ver dados internos ou de clientes.
+-- Leitura pública (v1.2.0): só pelo link exato, e só devolve o conteúdo se o perfil estiver
+-- no ar e dentro do vencimento. Em qualquer outro caso (inexistente, desativado, vencido,
+-- em configuração) devolve nada: não dá para descobrir se um link existe.
+-- Visitantes não conseguem listar perfis nem ver dados internos ou de clientes.
 create or replace function public.perfil_publico(p_slug text)
 returns jsonb
 language sql stable security definer
 set search_path = ''
 as $$
-  select case
-           when status = 'ativo' and public.perfil_vencido(vencimento) then jsonb_build_object('status', 'inativo')
-           when status = 'ativo' then jsonb_build_object('status', status, 'dados', dados)
-           else jsonb_build_object('status', status)
-         end
+  select jsonb_build_object('status', 'ativo', 'dados', dados)
   from public.perfis
-  where slug = lower(p_slug);
+  where slug = lower(p_slug)
+    and status = 'ativo'
+    and not public.perfil_vencido(vencimento);
 $$;
 revoke all on function public.perfil_publico(text) from public;
 grant execute on function public.perfil_publico(text) to anon, authenticated;

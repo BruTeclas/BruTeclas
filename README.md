@@ -11,11 +11,12 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
  Chaveiro NFC → │ nfcliente.com.br/studio-bella │ → perfil.html busca o perfil "studio-bella"
                 └──────────────────────────────┘          │
                                                            ▼
- Você → nfcliente.com.br/admin (login) ──────────► Supabase (banco + fotos)
+ Você → admin.nfcliente.com.br (login) ──────────► Supabase (banco + fotos)
         cria, edita, ativa, desativa, exclui
 ```
 
-- **Site:** arquivos estáticos na Hostinger, em `nfcliente.com.br` (veja *Hospedagem*).
+- **Site público:** arquivos estáticos na Hostinger, em `nfcliente.com.br`. As páginas dos perfis não têm nenhum código de login (veja *Hospedagem*).
+- **Painel:** `admin.nfcliente.com.br`, um endereço só dele. O antigo `nfcliente.com.br/admin` leva para lá.
 - **Banco e fotos:** o [Supabase](https://supabase.com) guarda clientes, perfis, imagens e o seu login. Hoje está no plano gratuito (veja *Plano do Supabase*).
 - O endereço do chaveiro **nunca muda**. Você altera links, fotos e situação pelo painel e a página atualiza na hora.
 
@@ -23,11 +24,13 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
 
 | Situação | O que o visitante vê | Quando usar |
 |---|---|---|
-| **Em configuração** | "Em breve" | Logo após "Ativar novo perfil", enquanto você monta a página |
+| **Em configuração** | "Perfil indisponível" | Logo após "Ativar novo perfil", enquanto você monta a página |
 | **No ar** | A página completa | Depois de clicar em "Liberar para o cliente" |
-| **Desativado** | "Perfil temporariamente indisponível" | Quando você quiser tirar do ar. **Nada é apagado** e dá para reativar com um clique |
-| **Fora do ar · vencido** | "Perfil temporariamente indisponível" | **Automático:** 3 dias depois do vencimento sem renovação. Ao renovar, volta na hora (veja *Vencimento*) |
-| **Excluído** | "Página não encontrada" | Apaga página, links, fotos e dados internos, **sem volta**. Pede para digitar o link como confirmação |
+| **Desativado** | "Perfil indisponível" | Quando você quiser tirar do ar. **Nada é apagado** e dá para reativar com um clique |
+| **Fora do ar · vencido** | "Perfil indisponível" | **Automático:** 3 dias depois do vencimento sem renovação. Ao renovar, volta na hora (veja *Vencimento*) |
+| **Excluído** | "Perfil indisponível" | Apaga página, links, fotos e dados internos, **sem volta**. Pede para digitar o link como confirmação |
+
+Quem lê o chaveiro vê **a mesma mensagem** para link desativado, vencido, em configuração, excluído ou que nunca existiu. Assim ninguém descobre quais links existem (desde a v1.2.0).
 
 ### O que dá para configurar em cada perfil
 
@@ -52,7 +55,7 @@ Cada perfil pode ter uma data de **próximo vencimento**.
 |---|---|---|
 | Faltam 7 dias ou menos | Normal | "Vence em X dias", em laranja |
 | Venceu, até 3 dias depois (carência) | Normal | "Venceu… sai do ar em…", em laranja |
-| A partir do 4º dia | "Perfil temporariamente indisponível" | Selo **Fora do ar · vencido**, em vermelho |
+| A partir do 4º dia | "Perfil indisponível" | Selo **Fora do ar · vencido**, em vermelho |
 
 - **Renovar:** quando o cliente pagar, clique em **Renovar +1 mês**, na lista ou no perfil. O vencimento avança 1 mês a partir do vencimento anterior, e a página volta ao ar na hora. No campo de data do perfil, o botão **+1 mês** faz o mesmo e vale ao salvar.
 - **Sem data de vencimento:** o perfil nunca sai do ar sozinho.
@@ -89,9 +92,13 @@ node ferramentas/servidor-local.js --demo   # modo demonstração: nada vai para
 node ferramentas/servidor-local.js          # usa o Supabase de verdade (dados reais!)
 ```
 
-Abra `http://localhost:3000/admin`. Um perfil abre em `http://localhost:3000/<link>`, como no site.
+| Endereço no computador | Como no site |
+|---|---|
+| `http://localhost:3000/<link>` | `nfcliente.com.br/<link>` (perfil) |
+| `http://admin.localhost:3000/` | `admin.nfcliente.com.br` (painel) |
+| `http://localhost:3000/admin/` | Atalho só do computador: o mesmo painel no endereço do site. Use no modo demonstração, em que painel e perfis precisam do mesmo endereço |
 
-O servidor local aplica as mesmas regras e cabeçalhos de segurança do `.htaccess`: `/<link>`, `/admin`, CSP e bloqueio de arquivos internos. Assim, o que funciona nele funciona na Hostinger.
+O servidor local aplica as mesmas regras e cabeçalhos de segurança dos dois `.htaccess`: o da raiz para o site e o de `admin/` para o painel. Isso inclui `/<link>`, CSP e o bloqueio de arquivos internos. Assim, o que funciona nele funciona na Hostinger.
 
 - **Modo demonstração (`--demo`):**
   - os dados ficam só no navegador;
@@ -118,8 +125,8 @@ O projeto **NFC Ambiente** já está configurado:
 Essas opções não podem ser mudadas pelo banco. Elas foram feitas em outubro de 2026, em [supabase.com/dashboard](https://supabase.com/dashboard), no projeto **NFC Ambiente**. Confira de vez em quando e refaça tudo se criar um projeto novo:
 
 1. **Authentication → URL Configuration**
-   - **Site URL:** `https://nfcliente.com.br`.
-   - **Redirect URLs:** adicione `https://nfcliente.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
+   - **Site URL:** `https://nfcliente.com.br` ou, de preferência, `https://admin.nfcliente.com.br`. Os links dos e-mails funcionam com as duas, porque `nfcliente.com.br/admin/...` leva ao painel.
+   - **Redirect URLs:** `https://admin.nfcliente.com.br/redefinir-senha.html`, mais as antigas `https://nfcliente.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
 2. **Authentication → Sign In / Providers**
    - Em **User Signups**:
      - desligue **"Allow new users to sign up"**. Ninguém cria conta sozinho; só entra quem você cadastrar;
@@ -152,17 +159,31 @@ O projeto está no **plano gratuito**:
 - **Cotas:** há limite de tráfego (5 GB por mês, contando as fotos baixadas pelos visitantes) e de espaço para fotos (1 GB). Acompanhe em **Settings → Usage**.
 - **Para não depender disso:** o **plano Pro** não pausa, tem backup diário e permite um limite de gastos (*spend cap*).
 
-## Hospedagem (Hostinger: nfcliente.com.br)
+## Hospedagem (Hostinger: nfcliente.com.br e admin.nfcliente.com.br)
 
-O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL Let's Encrypt ativo e redirecionamento para HTTPS.
+O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL ativo nos dois endereços e redirecionamento para HTTPS.
 
-- **Regras de endereço:** o `.htaccess` faz `nfcliente.com.br/<link>` abrir o perfil e `/admin` abrir o painel. Ele também tira o `www` e bloqueia arquivos que não são do site.
+| Endereço | Pasta no servidor | Regras |
+|---|---|---|
+| `nfcliente.com.br` (site público) | `public_html` | `.htaccess` da raiz |
+| `admin.nfcliente.com.br` (painel) | `public_html/painel-admin` (subdomínio) | `admin/.htaccess`, publicado como `painel-admin/.htaccess` |
+
+- **Regras de endereço do site:**
+  - `nfcliente.com.br/<link>` abre o perfil;
+  - `/admin/...` leva para `admin.nfcliente.com.br/...` com os mesmos parâmetros, então links antigos e e-mails de senha continuam valendo;
+  - tira o `www` e bloqueia arquivos que não são do site;
+  - `/painel-admin` dá 404.
+- **Regras do painel:**
+  - só abre pelo endereço `admin.nfcliente.com.br`;
+  - bloqueia arquivos PHP, como a página padrão da Hostinger, e arquivos ocultos;
+  - pede aos buscadores para não indexar.
 - **Cabeçalhos de segurança:** o `.htaccess` também envia:
   - **HSTS:** o navegador passa a usar sempre HTTPS;
   - **CSP:** a lista de onde o site pode carregar scripts, estilos, fotos e conexões.
   
   Se um dia o site precisar de outro serviço externo (por exemplo, fotos de outro endereço ou um script de estatísticas), inclua esse endereço na linha `Content-Security-Policy`. Sem isso, o navegador bloqueia.
-- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. README, SQL, modelos de e-mail, `docs/` e `ferramentas/` ficam de fora.
+- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. O pacote tem o site público na raiz e o painel em `painel-admin/`. README, SQL, modelos de e-mail, `docs/` e `ferramentas/` ficam de fora.
+- **O site público não recebe o código do painel:** nem o `db.js` nem a biblioteca de login do Supabase. As páginas dos perfis usam só `js/publico.js`.
 
 ### Atualizar o site
 
@@ -175,7 +196,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
    Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote. **O pacote substitui o conteúdo do site**, mas preserva a pasta `painel-admin`, do subdomínio `admin.nfcliente.com.br` (conferido na publicação da v1.1.0). Para isso, Claude precisa de duas coisas:
    - o **conector da Hostinger** autorizado nas configurações de conectores do claude.ai;
    - acesso ao repositório. Se ele estiver privado, que é o recomendado, cadastre a **chave de implantação** (*deploy key*) da Hostinger no GitHub, em *Settings → Deploy keys*, só com leitura. A chave aparece no hPanel, em *Avançado → Git*.
-3. Confira `https://nfcliente.com.br/admin` e um perfil. Para garantir a versão nova, use uma aba anônima.
+3. Confira `https://admin.nfcliente.com.br` e um perfil. Para garantir a versão nova, use uma aba anônima.
 
 > Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras de endereço, mas **não** têm os cabeçalhos de segurança do `.htaccess` (CSP, HSTS), que precisariam ser copiados. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
 
@@ -206,13 +227,15 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 ```
 index.html            Página inicial do domínio (sua vitrine; personalize)
 perfil.html           Página pública de cada perfil (/<link>)
-admin/                Painel com login
+admin/                Painel com login (publicado em admin.nfcliente.com.br, pasta painel-admin)
   index.html, admin.js, admin.css
   redefinir-senha.html, redefinir-senha.js  Página do link "Esqueci minha senha" e do convite
+  .htaccess           Regras e cabeçalhos de segurança do painel
 js/config.js          Endereço do Supabase, chave pública e domínio
-js/db.js              Acesso ao banco (Supabase ou modo demonstração)
+js/db.js              Acesso ao banco (Supabase ou modo demonstração). Só o painel usa
+js/publico.js         Leitura de um perfil pela página pública (uma consulta, sem login)
 js/perfil-render.js   Desenha a página do perfil, gera o Pix e o vCard
-js/pagina-perfil.js   Carrega o perfil pelo link e mostra os avisos (fora do ar, não encontrado)
+js/pagina-perfil.js   Carrega o perfil pelo link e mostra o aviso "Perfil indisponível"
 js/lib/               Bibliotecas de terceiros com versão fixa (Supabase e QR Code) e suas licenças
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
@@ -236,8 +259,13 @@ vercel.json           Rotas para a Vercel
 - **Link de nova senha:** vale uma vez, expira em 1 hora e é apagado da barra de endereço assim que a página abre.
 - **Bibliotecas de terceiros:** o Supabase e o gerador de QR Code ficam dentro do site, em `js/lib/`, com a versão no nome do arquivo. Uma versão nova publicada por terceiros nunca entra sozinha. Para atualizar, baixe a nova versão (`npm pack @supabase/supabase-js@X.Y.Z`), troque o arquivo, ajuste o nome nas páginas e em `publicar/montar-pacote.py` e teste. A pasta não pode se chamar `vendor`: a publicação da Hostinger descarta pastas com esse nome.
 - **Nenhum script embutido nas páginas:** todo o JavaScript fica em arquivos `.js`. Assim a CSP pode proibir scripts embutidos, que é o caminho mais comum de um ataque de injeção (XSS).
-- **Página pública sem sessão:** as páginas dos perfis consultam o banco como visitante, sem usar, renovar ou gravar o login do painel.
-  Isso **não isola** a sessão: o painel e os perfis estão no mesmo endereço (`nfcliente.com.br`) e dividem o armazenamento do navegador. Quem protege a sessão é a CSP, que impede scripts injetados. Para isolar de verdade, o passo seguinte é mover o painel para um subdomínio próprio (por exemplo `admin.nfcliente.com.br`).
+- **Painel em endereço próprio (`admin.nfcliente.com.br`):** o login fica guardado só nesse endereço. As páginas públicas (`nfcliente.com.br`) não têm acesso a ele, porque o navegador separa o armazenamento de cada endereço. Uma falha numa página pública não alcança a sessão do administrador.
+- **Página pública sem código de login:**
+  - as páginas dos perfis carregam só o necessário para mostrar o perfil;
+  - fazem uma única consulta à função `perfil_publico`;
+  - têm regras próprias e mais rígidas: nenhum formulário, nenhuma moldura e conexão só com o Supabase.
+  - Ao abrir, elas também apagam qualquer login antigo do painel que tenha ficado guardado no endereço do site.
+- **Resposta única:** link inexistente, desativado, vencido ou em configuração recebem a mesma resposta. Não dá para descobrir quais links existem.
 - **Endereço do cliente:** só vai para a página se você marcar a caixa (veja *Clientes*).
 
 ## Próximas ideias

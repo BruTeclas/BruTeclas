@@ -18,7 +18,7 @@ Use quando uma versão nova der problema e você quiser o site de antes de volta
    - Veja em [`HISTORICO.md`](HISTORICO.md) se as versões que você está desfazendo mexeram no banco.
    - Se mexeram, rode no **SQL Editor** do Supabase o script de desfazer de cada uma, da mais nova para a mais antiga. Os scripts ficam em `supabase/versoes/`.
    - Se nenhuma mexeu, não há nada a fazer no banco.
-4. **Conferir:** abra `https://nfcliente.com.br/admin` e um perfil, numa aba anônima.
+4. **Conferir:** abra o painel e um perfil, numa aba anônima. Desde a v1.2.0 o painel fica em `https://admin.nfcliente.com.br`; antes, ficava em `https://nfcliente.com.br/admin`.
 
 Os dados dos clientes não são apagados ao voltar a versão do site.
 
@@ -56,12 +56,14 @@ git checkout versao-X.Y.Z
 python3 publicar/montar-pacote.py      # gera publicar/nfcliente-site.zip
 ```
 
-Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**. Envie o `nfcliente-site.zip` para `public_html` e extraia. O `.htaccess` vai junto e já faz `/<link>` abrir o perfil e `/admin` abrir o painel.
+Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**. Envie o `nfcliente-site.zip` para `public_html` e extraia. Os dois `.htaccess` vão junto: o da raiz faz `/<link>` abrir o perfil, e o de `painel-admin/` cuida do painel.
 
-Antes de enviar, se quiser conferir no computador: `node ferramentas/servidor-local.js` e abra `http://localhost:3000/admin`.
+O painel precisa do subdomínio `admin.nfcliente.com.br` apontando para a pasta `public_html/painel-admin`. Na Hostinger, crie em **Domínios → Subdomínios**, com *Pasta personalizada* `painel-admin`.
+
+Antes de enviar, se quiser conferir no computador: `node ferramentas/servidor-local.js` e abra `http://admin.localhost:3000/`.
 
 ## 4. Conferir
 
-- `https://nfcliente.com.br/admin` abre o login e você consegue entrar.
+- `https://admin.nfcliente.com.br` abre o login e você consegue entrar. `https://nfcliente.com.br/admin` leva para lá.
 - `https://nfcliente.com.br/<um-link>` mostra o perfil.
 - "Esqueci minha senha" envia o e-mail em português.

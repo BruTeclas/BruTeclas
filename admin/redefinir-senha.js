@@ -58,10 +58,10 @@
   checar();
 
   if (!(cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase)) {
-    aviso("Esta página só funciona com o Supabase configurado (js/config.js).", "Voltar ao painel", "/admin/");
+    aviso("Esta página só funciona com o Supabase configurado (js/config.js).", "Voltar ao painel", "./");
     return;
   }
-  if (codigoErro) { aviso(LINK_INVALIDO, "Pedir um novo link", "/admin/#esqueci"); return; }
+  if (codigoErro) { aviso(LINK_INVALIDO, "Pedir um novo link", "./#esqueci"); return; }
 
   var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
@@ -79,7 +79,7 @@
     });
   });
   pronto.then(function (temSessao) {
-    if (!temSessao) aviso("Abra esta página pelo link que enviamos para o seu e-mail.", "Pedir um link", "/admin/#esqueci");
+    if (!temSessao) aviso("Abra esta página pelo link que enviamos para o seu e-mail.", "Pedir um link", "./#esqueci");
   });
 
   function erroAuth(e) {
@@ -111,10 +111,10 @@
       // Desconecta outros aparelhos que estivessem usando a senha antiga
       return sb.auth.signOut({ scope: "others" }).catch(function () {});
     }).then(function () {
-      aviso(tipo === "invite" ? "Senha criada! Você já pode entrar no painel." : "Senha alterada! Você já pode entrar no painel com a nova senha.", "Ir para o painel", "/admin/");
+      aviso(tipo === "invite" ? "Senha criada! Você já pode entrar no painel." : "Senha alterada! Você já pode entrar no painel com a nova senha.", "Ir para o painel", "./");
     }).catch(function (err) {
       var m = erroAuth(err);
-      if (m === LINK_INVALIDO) aviso(m, "Pedir um novo link", "/admin/#esqueci");
+      if (m === LINK_INVALIDO) aviso(m, "Pedir um novo link", "./#esqueci");
       else $("erro").textContent = m;
       btn.disabled = false;
     });

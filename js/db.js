@@ -16,7 +16,7 @@
   "use strict";
   var cfg = window.CONFIG || {};
   var BUCKET = "imagens";
-  var RESERVADOS = ["admin", "perfil", "js", "css", "img", "api", "assets", "index", "404", "supabase", "login", "www", "publicar"];
+  var RESERVADOS = ["admin", "perfil", "js", "css", "img", "api", "assets", "index", "404", "supabase", "login", "www", "publicar", "painel", "painel-admin"];
   var CAMPOS_CLIENTE_RESUMO = "id,nome,telefone,whatsapp,email";
   var UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
   var REDES_CLIENTE = ["instagram", "facebook", "tiktok", "youtube", "linkedin", "x", "kwai", "pinterest", "telegram", "site"];
@@ -477,12 +477,9 @@
   // Supabase
   // ===========================================================================
   function criarSupabase() {
-    // Páginas públicas (perfil.html) não usam login: não leem nem guardam a sessão do administrador.
-    var publica = document.body && document.body.getAttribute("data-pagina") === "publica";
+    // Só o painel (admin.nfcliente.com.br) carrega este arquivo. As páginas públicas usam js/publico.js.
     var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
-      auth: publica
-        ? { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-        : { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
     var SELECT_PERFIL = "*, cliente:clientes(" + CAMPOS_CLIENTE_RESUMO + ")";
 
@@ -533,7 +530,8 @@
       recuperarSenha: function (email) {
         email = String(email || "").trim();
         if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Promise.reject(erro("Digite um e-mail válido."));
-        return sb.auth.resetPasswordForEmail(email, { redirectTo: urlBase() + "/admin/redefinir-senha.html" }).then(function (r) {
+        // Página de nova senha do próprio painel (admin.nfcliente.com.br/redefinir-senha.html)
+        return sb.auth.resetPasswordForEmail(email, { redirectTo: new URL("redefinir-senha.html", location.href).href }).then(function (r) {
           if (r.error && (r.error.status === 429 || /rate_limit/.test(r.error.code || ""))) throw erroAuth(r.error);
         });
       },

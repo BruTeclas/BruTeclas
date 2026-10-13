@@ -14,11 +14,6 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## Planejado
 
-- **v1.2.0: página pública blindada**
-  - painel em `admin.nfcliente.com.br`; o subdomínio já foi criado, na pasta `public_html/painel-admin`;
-  - página pública sem a biblioteca de login;
-  - regras de segurança mais rígidas nas páginas públicas;
-  - resposta igual para link desativado, em configuração ou inexistente.
 - **v1.3.0: link de configuração para o cliente**
   - **Para quem:** só para cliente ativo com perfil no ar.
   - **Validade:** vale até você revogar. Gerar um link novo cancela o anterior.
@@ -26,6 +21,26 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - **Quando vai ao ar:** as alterações só valem quando o cliente clica em **Salvar**.
   - **Histórico:** cada vez que o cliente salva, a versão anterior fica guardada, e você pode desfazer.
   - **Vencimento:** o link para de funcionar se o perfil estiver desativado ou vencido (v1.1.0).
+
+## v1.2.0 · 13/10/2026: página pública blindada e painel em endereço próprio
+
+- **Painel em `admin.nfcliente.com.br`**, na pasta `public_html/painel-admin`, que é a do subdomínio.
+  - O login do administrador fica guardado só nesse endereço, fora do alcance das páginas públicas.
+  - O antigo `nfcliente.com.br/admin/...` leva para o endereço novo com os mesmos parâmetros, então os links dos e-mails de senha continuam valendo.
+  - O painel tem regras próprias: só abre pelo endereço do painel, não roda PHP e não aparece em buscadores.
+  - **Na primeira vez, é preciso entrar de novo**, porque o endereço é outro.
+- **Página pública sem código de login:**
+  - carrega só o necessário para mostrar o perfil;
+  - faz uma única consulta ao banco, com o novo `js/publico.js`;
+  - o site público não recebe mais o `db.js` nem a biblioteca do Supabase;
+  - apaga um login antigo do painel que tenha ficado guardado no endereço do site.
+- **Regras mais rígidas nas páginas públicas:** nenhum formulário, nenhuma moldura (iframe) e conexão só com o Supabase.
+- **Resposta única:** link inexistente, desativado, vencido ou em configuração mostram "Perfil indisponível". Antes, eram "Em breve", "temporariamente indisponível" e "não encontrada".
+- **Banco: mudou.**
+  - `perfil_publico` passou a devolver conteúdo só de perfil no ar e dentro do vencimento; em qualquer outro caso, nada.
+  - Para desfazer: `supabase/versoes/v1.2.0-desfazer.sql`.
+- **Links reservados:** `painel` e `painel-admin` não podem ser usados como link de perfil.
+- **Servidor local:** o painel abre em `http://admin.localhost:3000/`, como no site.
 
 ## v1.1.0 · 13/10/2026: perfil sai do ar sozinho quando a cobrança vence (ponto de restauração `versao-1.1.0`)
 
