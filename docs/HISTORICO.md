@@ -14,7 +14,15 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## v1.3.0 · 13/10/2026: link para o cliente editar o próprio perfil (ponto de restauração `versao-1.3.0`)
 
-- **Situação:** banco e função de fotos já no ar; site aguardando publicação.
+- **Publicada em 13/10/2026:**
+  - os 31 arquivos no ar conferidos contra o pacote, incluindo os 9 de `painel-cliente`;
+  - `/painel-cliente` pelo endereço do site dá 404, e o painel e os perfis seguem normais.
+- **Conferida no ar**, no perfil de teste studio-tati, com um cliente temporário:
+  - PIN errado, código errado e acesso falso recusados; PIN certo entra;
+  - salvar vai ao ar na hora; link `javascript:` e foto de outro site recusados;
+  - envio de foto aceito, e arquivo que não é imagem recusado;
+  - a função de fotos só aceita pedidos vindos de `cliente.nfcliente.com.br`;
+  - depois do teste, os dados originais do perfil foram restaurados e o link de teste foi revogado.
 - **Link para o cliente editar:**
   - no editor do perfil, o cartão **"Link para o cliente editar"** gera o link, com os botões **Copiar link** e **Enviar pelo WhatsApp**, e revoga;
   - só para perfil no ar, dentro do vencimento e ligado a um cliente;
