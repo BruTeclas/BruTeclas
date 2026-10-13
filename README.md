@@ -172,7 +172,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
    git add -A && git commit -m "Atualiza o site" && git push
    ```
 2. Na Hostinger, publique o pacote. Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**, envie `nfcliente-site.zip` para `public_html` e extraia.
-   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote. **O pacote substitui todo o conteúdo do site.** Para isso, Claude precisa de duas coisas:
+   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote. **O pacote substitui o conteúdo do site**, mas preserva a pasta `painel-admin`, do subdomínio `admin.nfcliente.com.br` (conferido na publicação da v1.1.0). Para isso, Claude precisa de duas coisas:
    - o **conector da Hostinger** autorizado nas configurações de conectores do claude.ai;
    - acesso ao repositório. Se ele estiver privado, que é o recomendado, cadastre a **chave de implantação** (*deploy key*) da Hostinger no GitHub, em *Settings → Deploy keys*, só com leitura. A chave aparece no hPanel, em *Avançado → Git*.
 3. Confira `https://nfcliente.com.br/admin` e um perfil. Para garantir a versão nova, use uma aba anônima.

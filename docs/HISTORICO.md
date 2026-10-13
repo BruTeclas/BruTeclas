@@ -45,6 +45,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - nova função `perfil_vencido`;
   - `perfil_publico` passou a conferir o vencimento.
   - Para desfazer: `supabase/versoes/v1.1.0-desfazer.sql`.
+- **Publicada em 13/10/2026.** Os 15 arquivos no ar foram conferidos contra o pacote do branch `versao-1.1.0`.
 - **Teste ao vivo:** o perfil de teste `studio-tati-cilios` (vencimento 10/10/2026) sai do ar em 14/10/2026.
 
 ## v1.0.0 · 13/10/2026: versão estável (ponto de restauração `versao-1.0.0`)
