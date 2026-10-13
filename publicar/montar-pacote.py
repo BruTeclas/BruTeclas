@@ -3,7 +3,8 @@
 
 O pacote tem duas partes, extraídas em public_html na Hostinger:
 - raiz: o site público nfcliente.com.br (páginas dos perfis, sem nenhum código de login);
-- painel-admin/: o painel, que abre em admin.nfcliente.com.br (pasta do subdomínio).
+- painel-admin/: o painel, que abre em admin.nfcliente.com.br (pasta do subdomínio);
+- painel-cliente/: a página em que o cliente edita o próprio perfil (cliente.nfcliente.com.br).
 
 Uso: python3 publicar/montar-pacote.py
 Depois faça commit e peça a publicação (veja "Atualizar o site" no README).
@@ -29,7 +30,13 @@ PAINEL = [("painel-admin/" + destino, origem) for destino, origem in [
     ("js/config.js", "js/config.js"), ("js/db.js", "js/db.js"), ("js/perfil-render.js", "js/perfil-render.js"), ("js/editor-perfil.js", "js/editor-perfil.js"),
     ("js/lib/supabase-js-2.117.2.js", "js/lib/supabase-js-2.117.2.js"), ("js/lib/qrcode-1.0.0.min.js", "js/lib/qrcode-1.0.0.min.js"),
 ]]
-ARQUIVOS = SITE_PUBLICO + PAINEL
+CLIENTE = [("painel-cliente/" + destino, origem) for destino, origem in [
+    ("index.html", "cliente/index.html"), ("cliente.js", "cliente/cliente.js"), (".htaccess", "cliente/.htaccess"),
+    ("admin/admin.css", "admin/admin.css"), ("css/perfil.css", "css/perfil.css"),
+    ("js/config.js", "js/config.js"), ("js/perfil-render.js", "js/perfil-render.js"), ("js/editor-perfil.js", "js/editor-perfil.js"),
+    ("js/lib/qrcode-1.0.0.min.js", "js/lib/qrcode-1.0.0.min.js"),
+]]
+ARQUIVOS = SITE_PUBLICO + PAINEL + CLIENTE
 
 with zipfile.ZipFile(DESTINO, "w", zipfile.ZIP_DEFLATED) as z:
     for destino, origem in ARQUIVOS:
@@ -39,4 +46,4 @@ with zipfile.ZipFile(DESTINO, "w", zipfile.ZIP_DEFLATED) as z:
         with open(os.path.join(RAIZ, origem), "rb") as f:
             z.writestr(info, f.read())
 print("Pacote gerado:", os.path.relpath(DESTINO, RAIZ), os.path.getsize(DESTINO), "bytes,", len(ARQUIVOS), "arquivos",
-      "(" + str(len(SITE_PUBLICO)), "do site público +", len(PAINEL), "do painel)")
+      "(" + str(len(SITE_PUBLICO)), "do site público +", len(PAINEL), "do painel +", len(CLIENTE), "da página do cliente)")

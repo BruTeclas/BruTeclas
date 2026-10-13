@@ -16,7 +16,7 @@
   "use strict";
   var cfg = window.CONFIG || {};
   var BUCKET = "imagens";
-  var RESERVADOS = ["admin", "perfil", "js", "css", "img", "api", "assets", "index", "404", "supabase", "login", "www", "publicar", "painel", "painel-admin", "docs", "ferramentas"];
+  var RESERVADOS = ["admin", "perfil", "js", "css", "img", "api", "assets", "index", "404", "supabase", "login", "www", "publicar", "painel", "painel-admin", "painel-cliente", "cliente", "editar", "docs", "ferramentas"];
   var CAMPOS_CLIENTE_RESUMO = "id,nome,telefone,whatsapp,email";
   var UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
   var REDES_CLIENTE = ["instagram", "facebook", "tiktok", "youtube", "linkedin", "x", "kwai", "pinterest", "telegram", "site"];
@@ -624,11 +624,28 @@
       },
       excluirCliente: function (id) {
         return sb.from("clientes").delete().eq("id", id).then(function (r) { return checar(r, "cliente"); });
+      },
+
+      // Link de configuração para o cliente (v1.3.0). O banco guarda só o código embaralhado:
+      // o link completo só existe na resposta de gerarLinkCliente.
+      linkCliente: function (perfilId) {
+        return sb.from("links_cliente").select("criado_em, revogado_em, ultimo_acesso, bloqueado_ate").eq("perfil_id", perfilId).maybeSingle().then(checar);
+      },
+      gerarLinkCliente: function (perfilId) {
+        return sb.rpc("gerar_link_cliente", { p_perfil_id: perfilId }).then(function (r) {
+          if (r.error) throw erro(r.error.message || "Não foi possível gerar o link.");
+          return urlCliente() + "/#" + r.data;
+        });
+      },
+      revogarLinkCliente: function (perfilId) { return sb.rpc("revogar_link_cliente", { p_perfil_id: perfilId }).then(checar); },
+      historico: function (perfilId) {
+        return sb.from("perfis_historico").select("id, dados, autor, criado_em").eq("perfil_id", perfilId).order("criado_em", { ascending: false }).limit(15).then(checar);
       }
     };
   }
 
   function urlBase() { return (cfg.dominio || location.origin).replace(/\/+$/, ""); }
+  function urlCliente() { return (cfg.dominioCliente || location.origin + "/cliente").replace(/\/+$/, ""); }
 
   // Sem Supabase configurado: demonstração. Configurado mas sem a biblioteca (rede, bloqueador):
   // erro claro, nunca a demonstração (que aceitaria qualquer senha).

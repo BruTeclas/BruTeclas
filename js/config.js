@@ -17,6 +17,9 @@ window.CONFIG = {
   // Vazio = usa o endereço atual do navegador.
   dominio: "https://nfcliente.com.br",
 
+  // Página em que o cliente edita o próprio perfil (link de configuração, v1.3.0).
+  dominioCliente: "https://cliente.nfcliente.com.br",
+
   marca: "BruTeclas",
 
   // Crédito no rodapé de todos os perfis. O nome vira link para "url".

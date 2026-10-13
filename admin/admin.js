@@ -671,6 +671,8 @@
       ])
     ]));
 
+    form.appendChild(cartaoLinkCliente(ed));
+
     // --- Aparência, informações, links e botões extras (js/editor-perfil.js, o mesmo da página do cliente)
     var desenharLinks = EditorPerfil.montar(form, {
       dados: d, aoMudar: ed.aoMudar, marcarSujo: marcarSujo, falhou: falhou,
@@ -718,6 +720,8 @@
       ])
     ]));
 
+    form.appendChild(cartaoHistorico(ed));
+
     // --- Excluir ---------------------------------------------------------------------
     form.appendChild(cartao("fa-solid fa-triangle-exclamation", "Excluir perfil", [
       el("p", { class: "sub", style: "margin:-6px 0 14px", text: "Apaga a página, os links e as fotos. O cadastro do cliente continua. Não pode ser desfeito." }),
@@ -754,6 +758,91 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Link para o cliente editar (v1.3.0) e histórico de alterações
+  // ---------------------------------------------------------------------------
+  function dataHora(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+  function cartaoLinkCliente(ed) {
+    var corpo = el("div", {}, [el("p", { class: "sub", text: "Carregando…" })]);
+    var c = cartao("fa-solid fa-user-pen", "Link para o cliente editar", [corpo]);
+    if (DB.demo || !DB.linkCliente) { corpo.replaceChildren(el("p", { class: "sub", text: "Disponível com o Supabase configurado (não funciona no modo demonstração)." })); return c; }
+    function desenhar() {
+      var p = ed.orig;
+      var podeGerar = p.status === "ativo" && !DB.foraPorVencimento(p) && !!p.cliente_id;
+      DB.linkCliente(p.id).then(function (l) {
+        if (estado.ed !== ed) return;
+        var ativo = !!(l && !l.revogado_em);
+        var itens = [el("p", { class: "sub", style: "margin:-6px 0 12px", text: "O cliente abre o link, digita o PIN (os 4 últimos dígitos do WhatsApp ou do telefone do cadastro) e edita fotos, cores, textos e links. O link do perfil, a situação e a cobrança continuam só com você. As alterações vão ao ar quando ele clica em Salvar." })];
+        if (ativo) itens.push(el("p", {}, [el("strong", { text: "Link ativo" }), " desde " + dataHora(l.criado_em) +
+          (l.ultimo_acesso ? " · último acesso " + dataHora(l.ultimo_acesso) : " · ainda não usado") +
+          (l.bloqueado_ate && new Date(l.bloqueado_ate) > new Date() ? " · bloqueado por PIN errado até " + dataHora(l.bloqueado_ate) : "")]));
+        else if (l && l.revogado_em) itens.push(el("p", { class: "sub", text: "O último link foi revogado em " + dataHora(l.revogado_em) + "." }));
+        if (!podeGerar) itens.push(el("p", { class: "aviso-vencimento", text: !p.cliente_id ? "Ligue um cliente a este perfil (em \"Cliente e cobrança\") e salve para gerar o link." : "O perfil precisa estar no ar para gerar o link." }));
+        var botoes = el("div", { class: "status-botoes" });
+        if (podeGerar) botoes.appendChild(el("button", { class: "btn primario", type: "button", onclick: function () { gerar(ativo); } }, [icone("fa-solid fa-link"), ativo ? " Gerar novo link" : " Gerar link para o cliente"]));
+        if (ativo) botoes.appendChild(el("button", { class: "btn perigo-leve", type: "button", onclick: revogar }, [icone("fa-solid fa-ban"), " Revogar link"]));
+        itens.push(botoes);
+        corpo.replaceChildren.apply(corpo, itens);
+      }).catch(function (e) { corpo.replaceChildren(el("p", { class: "erro", text: "Não foi possível carregar o link: " + (e && e.message || e) })); });
+    }
+    function gerar(substitui) {
+      (substitui ? confirmar({ titulo: "Gerar um novo link?", texto: "O link atual para de funcionar na hora. Depois envie o novo para o cliente.", botao: "Gerar novo link" }) : Promise.resolve(true)).then(function (sim) {
+        if (!sim) return;
+        return DB.gerarLinkCliente(ed.orig.id).then(function (url) { mostrarLinkGerado(url, ed.orig); desenhar(); });
+      }).catch(falhou);
+    }
+    function revogar() {
+      confirmar({ titulo: "Revogar o link do cliente?", texto: "O link para de funcionar na hora, mesmo que o cliente esteja com a página aberta. Dá para gerar outro quando quiser.", botao: "Revogar", classe: "perigo" }).then(function (sim) {
+        if (!sim) return;
+        return DB.revogarLinkCliente(ed.orig.id).then(function () { toast("Link revogado."); desenhar(); });
+      }).catch(falhou);
+    }
+    desenhar();
+    return c;
+  }
+  function mostrarLinkGerado(url, p) {
+    var cliente = p.cliente || {}, tel = DB.soDigitos(cliente.whatsapp || "");
+    var msg = "Olá" + (cliente.nome ? ", " + cliente.nome.split(" ")[0] : "") + "! Este é o link para você editar a sua página " + DB.urlPerfil(p.slug) + ":\n" + url +
+      "\n\nPara entrar, use os 4 últimos dígitos do seu telefone cadastrado.";
+    var m = abrirModal([
+      el("h2", { text: "Link para o cliente" }),
+      el("p", { text: "Copie e envie agora. Por segurança, o link não fica guardado e não aparece de novo: para reenviar, gere outro." }),
+      el("div", { class: "link-gerado", text: url }),
+      el("div", { class: "modal-botoes" }, [
+        el("button", { class: "btn", type: "button", onclick: function () { Perfil.copiar(url, "Link copiado!"); } }, [icone("fa-regular fa-copy"), " Copiar link"]),
+        tel ? el("a", { class: "btn verde", href: "https://wa.me/" + tel + "?text=" + encodeURIComponent(msg), target: "_blank", rel: "noopener" }, [icone("fa-brands fa-whatsapp"), " Enviar pelo WhatsApp"]) : null,
+        el("button", { class: "btn primario", type: "button", onclick: function () { m.fechar(); } }, ["Pronto"])
+      ])
+    ]);
+  }
+  function cartaoHistorico(ed) {
+    var corpo = el("div", {}, [el("p", { class: "sub", text: "Carregando…" })]);
+    var c = cartao("fa-solid fa-clock-rotate-left", "Histórico de alterações", [corpo]);
+    if (DB.demo || !DB.historico) { c.hidden = true; return c; }
+    DB.historico(ed.orig.id).then(function (lista) {
+      if (estado.ed !== ed) return;
+      if (!lista || !lista.length) { corpo.replaceChildren(el("p", { class: "sub", text: "Ainda sem alterações registradas. Cada vez que a página é salva, por você ou pelo cliente, a versão anterior fica guardada aqui." })); return; }
+      corpo.replaceChildren(
+        el("p", { class: "sub", style: "margin:-6px 0 10px", text: "Versões anteriores da página. \"Carregar\" coloca a versão no editor: confira a prévia e clique em Salvar." }),
+        el("div", { class: "historico" }, lista.map(function (h) {
+          return el("div", { class: "historico-item" }, [
+            el("span", {}, [el("strong", { text: dataHora(h.criado_em) }), " · antes de uma alteração " + (h.autor === "cliente" ? "do cliente" : "sua")]),
+            el("button", { class: "btn pequeno", type: "button", onclick: function () {
+              var dados = Object.assign({ links: [] }, clonar(h.dados));
+              dados.links = (dados.links || []).map(function (l) { return l.id ? l : Object.assign({ id: uid() }, l); });
+              ed.p.dados = dados;
+              desenharEditor();
+              toast("Versão carregada no editor. Confira a prévia e clique em Salvar.");
+            } }, [icone("fa-solid fa-rotate-left"), " Carregar"])
+          ]);
+        })));
+    }).catch(function () { corpo.replaceChildren(el("p", { class: "erro", text: "Não foi possível carregar o histórico." })); });
+    return c;
+  }
+
+  // ---------------------------------------------------------------------------
   // Salvar
   // ---------------------------------------------------------------------------
   function salvar() {
@@ -777,7 +866,7 @@
       });
       ed.imagensNovas = [];
       var slugMudou = r.slug !== ed.orig.slug;
-      var vencMudou = DB.dataISO(r.vencimento) !== DB.dataISO(ed.orig.vencimento);
+      var vencMudou = DB.dataISO(r.vencimento) !== DB.dataISO(ed.orig.vencimento) || (r.cliente_id || null) !== (ed.orig.cliente_id || null);
       r.dados = p.dados;
       ed.orig = clonar(r);
       ed.p.slug = r.slug;

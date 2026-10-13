@@ -1,6 +1,7 @@
 # Regras do servidor (Hostinger: Apache/LiteSpeed) do site público nfcliente.com.br
 # nfcliente.com.br/<link>  ->  perfil.html   ·   /admin  ->  admin.nfcliente.com.br (painel)
-# O painel tem as próprias regras em painel-admin/.htaccess (no repositório: admin/.htaccess).
+# O painel tem as próprias regras em painel-admin/.htaccess (no repositório: admin/.htaccess),
+# e a página do cliente em painel-cliente/.htaccess (no repositório: cliente/.htaccess).
 
 DirectoryIndex index.html
 Options -Indexes
@@ -24,9 +25,9 @@ AddDefaultCharset utf-8
   # (/admin/redefinir-senha.html?token_hash=...) continuam funcionando: vão para lá com os mesmos parâmetros.
   RewriteRule ^admin(?:/+(.*))?$ https://admin.nfcliente.com.br/$1 [L,R=301]
 
-  # A pasta do painel não abre pelo endereço do site público
-  RewriteCond %{HTTP_HOST} !^admin\. [NC]
-  RewriteRule ^painel-admin(/|$) - [R=404,L]
+  # As pastas do painel e da página do cliente não abrem pelo endereço do site público
+  RewriteCond %{HTTP_HOST} !^(admin|cliente)\. [NC]
+  RewriteRule ^painel-(admin|cliente)(/|$) - [R=404,L]
 
   # Arquivos e pastas que existem são servidos normalmente
   RewriteCond %{REQUEST_FILENAME} -f [OR]
