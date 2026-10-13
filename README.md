@@ -175,11 +175,14 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 ## Backup
 
 - **Código e documentação:** tudo fica no GitHub, no repositório `BruTeclas/NFCliente`, com o histórico completo das versões. Mantenha-o **privado** (*Settings → General → Danger Zone → Change visibility*). O resumo do que mudou em cada data está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
-- **Ponto de restauração:** uma tag `backup-AAAA-MM-DD` marca uma versão que você sabe que funciona. Para criar uma pelo GitHub:
+- **Versões:** cada melhoria publicada ganha um número (`v1.0.0`, `v1.1.0`…) e um **ponto de restauração**, um branch `versao-X.Y.Z` no GitHub. Ele fica congelado com o site, a documentação e a estrutura do banco daquela versão. A lista está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
+- **Versão estável atual:** `v1.0.0`, no branch `versao-1.0.0`.
+- **Voltar a uma versão:** siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md).
+- **Opcional, com download em ZIP pelo GitHub:**
   1. Abra **Releases → Draft a new release**.
-  2. Em **Choose a tag**, digite `backup-AAAA-MM-DD` e escolha *Create new tag*.
-  3. Clique em **Publish release**. O GitHub gera o ZIP para download.
-- **Restaurar:** siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md).
+  2. Em **Choose a tag**, digite a versão (por exemplo `v1.0.0`) e escolha *Create new tag*.
+  3. Em **Target**, escolha o branch `versao-1.0.0`.
+  4. Clique em **Publish release**.
 - **Dados de clientes:** **não** ficam no GitHub, nem mesmo com o repositório privado; o guia explica como guardá-los à parte.
 
 ## Estrutura dos arquivos
@@ -198,7 +201,7 @@ js/lib/               Bibliotecas de terceiros com versão fixa (Supabase e QR C
 css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
-docs/RESTAURAR.md     Como restaurar tudo a partir de uma tag de backup
+docs/RESTAURAR.md     Como voltar a uma versão anterior ou restaurar tudo do zero
 docs/HISTORICO.md     O que mudou em cada versão
 ferramentas/servidor-local.js  Testar o site no computador com as regras da Hostinger
 publicar/             Pacote do site para a Hostinger e o script que o gera

@@ -1,19 +1,43 @@
 # Como restaurar o sistema a partir do backup
 
-Cada backup é uma **tag** no GitHub, por exemplo `backup-2026-10-13`. Ela guarda o código e a documentação exatamente como estavam naquele dia. Sem uma tag, use a versão mais recente do repositório: **Code → Download ZIP**.
+Cada versão publicada tem um **ponto de restauração** no GitHub: um branch `versao-X.Y.Z`, por exemplo `versao-1.0.0`. Ele guarda o código, a documentação, o pacote do site e a estrutura do banco exatamente como estavam naquela versão. A lista de versões está em [`HISTORICO.md`](HISTORICO.md).
 
-> **O que a tag NÃO guarda:** os dados do banco (clientes, perfis, fotos) e as configurações dos painéis do Supabase e da Hostinger.
+## Voltar o site para uma versão anterior (o caso mais comum)
+
+Use quando uma versão nova der problema e você quiser o site de antes de volta.
+
+1. **Pegar o pacote da versão:**
+   1. No GitHub, abra o repositório e troque o branch para `versao-X.Y.Z`. O seletor fica acima da lista de arquivos.
+   2. Abra `publicar/nfcliente-site.zip` e clique em **Download raw file**.
+2. **Publicar:**
+   1. No hPanel da Hostinger, abra **Sites → nfcliente.com.br → Gerenciador de arquivos**.
+   2. Envie o zip para `public_html` e extraia, substituindo os arquivos.
+
+   Ou peça ao Claude: "publique a versão X.Y.Z".
+3. **Banco:**
+   - Veja em [`HISTORICO.md`](HISTORICO.md) se as versões que você está desfazendo mexeram no banco.
+   - Se mexeram, rode no **SQL Editor** do Supabase o script de desfazer de cada uma, da mais nova para a mais antiga. Os scripts ficam em `supabase/versoes/`.
+   - Se nenhuma mexeu, não há nada a fazer no banco.
+4. **Conferir:** abra `https://nfcliente.com.br/admin` e um perfil, numa aba anônima.
+
+Os dados dos clientes não são apagados ao voltar a versão do site.
+
+## Restaurar tudo do zero
+
+Use se o projeto do Supabase ou a hospedagem forem perdidos.
+
+> **O que o ponto de restauração NÃO guarda:** os dados do banco (clientes, perfis, fotos) e as configurações dos painéis do Supabase e da Hostinger.
 > Os dados de clientes têm CPF, telefone e endereço. **Nunca** os coloque neste repositório: mesmo privado, um backup de código não é lugar para dados pessoais.
 > Para os dados, use o backup do próprio Supabase (plano Pro) ou exporte as tabelas `clientes` e `perfis` em CSV pelo *Table Editor* e guarde em local privado.
 
-## 1. Baixar o código da tag
+## 1. Baixar o código da versão
 
-No GitHub: **Code → Tags → backup-AAAA-MM-DD → Download ZIP**. Pelo terminal:
+No GitHub: troque para o branch `versao-X.Y.Z` → **Code → Download ZIP**. Pelo terminal:
 
 ```bash
 git clone https://github.com/BruTeclas/NFCliente.git
 cd NFCliente
-git checkout backup-AAAA-MM-DD
+git checkout versao-X.Y.Z
 ```
 
 ## 2. Recriar o banco (só se o projeto Supabase for perdido)
