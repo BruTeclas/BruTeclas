@@ -150,10 +150,12 @@
     } else {
       c = { titulo: "Desativar perfil?", texto: "A página sai do ar na hora. Quem ler o chaveiro verá \"Perfil temporariamente indisponível\". Nenhum dado é apagado; dá para reativar quando quiser.", botao: "Desativar", classe: "perigo" };
     }
+    var vencidoFora = novo === "ativo" && DB.situacaoVencimento(p.vencimento).situacao === "fora";
+    if (vencidoFora) c.alerta = "O vencimento (" + dataBR(DB.dataISO(p.vencimento)) + ") já passou da carência. Mesmo liberado, a página continua fora do ar até você renovar.";
     return confirmar(c).then(function (sim) {
       if (!sim) return null;
       return DB.salvar(p.id, { status: novo }).then(function (r) {
-        toast(novo === "ativo" ? "Perfil no ar! ✅" : "Perfil desativado.");
+        toast(novo !== "ativo" ? "Perfil desativado." : vencidoFora ? "Pronto, mas a página continua fora do ar por vencimento. Use \"Renovar +1 mês\"." : "Perfil no ar! ✅");
         return r;
       });
     }).catch(function (e) { falhou(e); return null; });
@@ -161,13 +163,14 @@
 
   // Renova o vencimento por 1 mês, contando do vencimento anterior (ou de hoje, se não havia)
   function renovar(p) {
-    var base = p.vencimento ? String(p.vencimento).slice(0, 10) : DB.hojeBrasilia();
+    var atual = DB.dataISO(p.vencimento);
+    var base = atual && +atual.slice(0, 4) >= 2000 ? atual : DB.hojeBrasilia();   // data absurda: conta a partir de hoje
     var novo = DB.somarMes(base);
     var volta = DB.foraPorVencimento(p) && DB.situacaoVencimento(novo).situacao !== "fora";
     var aindaFora = p.status === "ativo" && DB.situacaoVencimento(novo).situacao === "fora";
     return confirmar({
       titulo: "Renovar até " + dataBR(novo) + "?",
-      texto: "O próximo vencimento passa de " + (p.vencimento ? dataBR(base) : "(sem data)") + " para " + dataBR(novo) + "." +
+      texto: "O próximo vencimento passa de " + (atual ? dataBR(atual) : "(sem data)") + " para " + dataBR(novo) + "." +
         (volta ? " A página volta ao ar na hora." : "") +
         (aindaFora ? " Atenção: essa data ainda passou da carência, então a página continua fora do ar. Renove de novo ou ajuste a data no perfil." : ""),
       botao: "Renovar", classe: "verde"
@@ -982,8 +985,10 @@
     var campo = campoTexto("Próximo vencimento", p.vencimento ? String(p.vencimento).slice(0, 10) : "", function (v) { p.vencimento = v || null; marcarSujo(); },
       { tipo: "date", dica: "Depois do vencimento, a página continua no ar por mais " + DB.CARENCIA_DIAS + " dias e então sai do ar sozinha. Ao renovar, volta na hora. Sem data, nunca sai do ar." });
     var input = campo.querySelector("input");
+    input.min = "2000-01-01"; input.max = "2099-12-31";
     var btn = el("button", { class: "btn pequeno", type: "button", title: "Soma 1 mês ao vencimento atual (ou a hoje, se estiver vazio)", onclick: function () {
-      p.vencimento = DB.somarMes(p.vencimento ? String(p.vencimento).slice(0, 10) : DB.hojeBrasilia());
+      var atual = DB.dataISO(p.vencimento);
+      p.vencimento = DB.somarMes(atual && +atual.slice(0, 4) >= 2000 ? atual : DB.hojeBrasilia());
       input.value = p.vencimento;
       marcarSujo();
       toast("Vencimento: " + dataBR(p.vencimento) + ". Clique em Salvar para valer.");
@@ -1017,11 +1022,14 @@
       });
       ed.imagensNovas = [];
       var slugMudou = r.slug !== ed.orig.slug;
+      var vencMudou = DB.dataISO(r.vencimento) !== DB.dataISO(ed.orig.vencimento);
       r.dados = p.dados;
       ed.orig = clonar(r);
       ed.p.slug = r.slug;
       ed.p.cliente = r.cliente || null;
-      if (slugMudou) desenharEditor(); else { cabecalhoEditor(); marcarSujo(); }
+      ed.p.vencimento = r.vencimento;
+      if (slugMudou || vencMudou) { var y = window.scrollY; desenharEditor(); window.scrollTo(0, y); }   // a situação (no ar / vencido) pode ter mudado
+      else { cabecalhoEditor(); marcarSujo(); }
       toast("Salvo! ✅");
       return true;
     }).catch(function (e) { falhou(e); return false; })

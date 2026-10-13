@@ -39,6 +39,8 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - avisos "vence em X dias" e "sai do ar em…";
   - contagem no resumo;
   - o filtro "No ar" não mostra perfis vencidos.
+- **Data de vencimento:** só aceita anos de 2000 a 2099; uma data inválida não é salva.
+- **"Reativar" e "Liberar":** avisam quando o vencimento já passou da carência, porque nesse caso a página continua fora do ar até renovar.
 - **Banco: mudou.**
   - nova função `perfil_vencido`;
   - `perfil_publico` passou a conferir o vencimento.

@@ -55,21 +55,31 @@
     try { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
     catch (e) { var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
   }
-  function somarDias(iso, n) {
-    var p = String(iso).slice(0, 10).split("-").map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n));
-    return d.toISOString().slice(0, 10);
-  }
+  // "AAAA-MM-DD" (também aceita data com hora, como vem do banco); qualquer outra coisa vira null
+  function dataISO(v) { var m = /^(\d{4})-(\d{2})-(\d{2})(?![\d])/.exec(String(v == null ? "" : v)); return m ? m[1] + "-" + m[2] + "-" + m[3] : null; }
+  function utc(ano, mes, dia) { var d = new Date(0); d.setUTCFullYear(ano, mes - 1, dia); return d; }   // sem converter anos 0–99 em 19xx
+  function iso(d) { return String(d.getUTCFullYear()).padStart(4, "0") + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0"); }
+  function somarDias(v, n) { var p = dataISO(v).split("-").map(Number); return iso(utc(p[0], p[1], p[2] + n)); }
   // 31/01 + 1 mês = 28/02 (ou 29/02): nunca pula para o mês seguinte
-  function somarMes(iso) {
-    var p = String(iso).slice(0, 10).split("-").map(Number), ano = p[0] + (p[1] === 12 ? 1 : 0), mes = p[1] % 12 + 1;
-    var ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
-    return ano + "-" + String(mes).padStart(2, "0") + "-" + String(Math.min(p[2], ultimo)).padStart(2, "0");
+  function somarMes(v) {
+    var p = dataISO(v).split("-").map(Number), ano = p[0] + (p[1] === 12 ? 1 : 0), mes = p[1] % 12 + 1;
+    var ultimo = utc(ano, mes + 1, 0).getUTCDate();
+    return iso(utc(ano, mes, Math.min(p[2], ultimo)));
   }
-  function diasEntre(a, b) { return Math.round((Date.parse(b) - Date.parse(a)) / 864e5); }
+  function diasEntre(a, b) { var x = a.split("-").map(Number), y = b.split("-").map(Number); return Math.round((utc(y[0], y[1], y[2]) - utc(x[0], x[1], x[2])) / 864e5); }
+  // Vencimento digitado: vazio ou uma data real entre 2000 e 2099
+  function validarVencimento(v) {
+    if (v == null || v === "") return null;
+    var d = dataISO(v);
+    if (!d || String(v).length > 10 && !/^\d{4}-\d{2}-\d{2}[T ]/.test(String(v)) || +d.slice(0, 4) < 2000 || +d.slice(0, 4) > 2099 || somarDias(d, 0) !== d)
+      throw erro("Data de vencimento inválida. Use dia/mês/ano, com o ano entre 2000 e 2099.");
+    return d;
+  }
   // situacao: "sem" (sem vencimento), "em-dia", "vence-logo" (até 7 dias), "carencia" (venceu, ainda no ar) ou "fora" (saiu do ar)
   function situacaoVencimento(vencimento, hoje) {
-    if (!vencimento) return { situacao: "sem" };
-    var v = String(vencimento).slice(0, 10), h = hoje || hojeBrasilia(), saiDoAr = somarDias(v, CARENCIA_DIAS + 1);
+    var v = dataISO(vencimento);
+    if (!v) return { situacao: "sem" };   // vazio ou data que o banco não consideraria vencida
+    var h = hoje || hojeBrasilia(), saiDoAr = somarDias(v, CARENCIA_DIAS + 1);
     var r = { vencimento: v, saiDoAr: saiDoAr, dias: diasEntre(h, v) };
     if (h >= saiDoAr) r.situacao = "fora";
     else if (h > v) r.situacao = "carencia";
@@ -364,6 +374,7 @@
         return Promise.resolve().then(function () {
           var lista = ler(), p = lista.filter(function (x) { return x.id === id; })[0];
           if (!p) throw erro("Perfil não encontrado.");
+          if ("vencimento" in patch) patch.vencimento = validarVencimento(patch.vencimento);
           if (patch.slug != null) {
             patch.slug = validarSlug(patch.slug);
             if (slugEmUso(lista, patch.slug, id)) throw erro("O link \"" + patch.slug + "\" já está em uso.");
@@ -561,6 +572,7 @@
       salvar: function (id, patch) {
         return Promise.resolve().then(function () {
           if (patch.slug != null) patch.slug = validarSlug(patch.slug);
+          if ("vencimento" in patch) patch.vencimento = validarVencimento(patch.vencimento);
           return sb.from("perfis").update(patch).eq("id", id).select(SELECT_PERFIL).single().then(checar);
         });
       },
@@ -644,6 +656,8 @@
   db.CARENCIA_DIAS = CARENCIA_DIAS;
   db.hojeBrasilia = hojeBrasilia;
   db.somarMes = somarMes;
+  db.dataISO = dataISO;
+  db.validarVencimento = validarVencimento;
   db.situacaoVencimento = situacaoVencimento;
   db.foraPorVencimento = foraPorVencimento;
   window.DB = db;
