@@ -1,4 +1,4 @@
-# BruTeclas · Perfis para chaveiros NFC
+# NFCliente · Perfis para chaveiros NFC
 
 Sistema para criar e gerenciar páginas de links ("link na bio") para clientes.
 Cada cliente ganha um endereço próprio, por exemplo `nfcliente.com.br/studio-bella`,
@@ -174,7 +174,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 
 ## Backup
 
-- **Código e documentação:** tudo fica no GitHub, no repositório `BruTeclas/BruTeclas`, com o histórico completo das versões. Mantenha-o **privado** (*Settings → General → Danger Zone → Change visibility*). O resumo do que mudou em cada data está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
+- **Código e documentação:** tudo fica no GitHub, no repositório `BruTeclas/NFCliente`, com o histórico completo das versões. Mantenha-o **privado** (*Settings → General → Danger Zone → Change visibility*). O resumo do que mudou em cada data está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
 - **Ponto de restauração:** uma tag `backup-AAAA-MM-DD` marca uma versão que você sabe que funciona. Para criar uma pelo GitHub:
   1. Abra **Releases → Draft a new release**.
   2. Em **Choose a tag**, digite `backup-AAAA-MM-DD` e escolha *Create new tag*.

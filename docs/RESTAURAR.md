@@ -11,8 +11,8 @@ Cada backup é uma **tag** no GitHub, por exemplo `backup-2026-10-13`. Ela guard
 No GitHub: **Code → Tags → backup-AAAA-MM-DD → Download ZIP**. Pelo terminal:
 
 ```bash
-git clone https://github.com/BruTeclas/BruTeclas.git
-cd BruTeclas
+git clone https://github.com/BruTeclas/NFCliente.git
+cd NFCliente
 git checkout backup-AAAA-MM-DD
 ```
 

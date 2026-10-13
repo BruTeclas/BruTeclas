@@ -4,6 +4,7 @@ O que mudou no sistema, da versão mais nova para a mais antiga. O detalhe técn
 
 ## 13/10/2026: documentação
 
+- Projeto renomeado para **NFCliente** no GitHub (`BruTeclas/NFCliente`).
 - README revisado:
   - hospedagem na Hostinger;
   - configurações do Supabase já feitas;
