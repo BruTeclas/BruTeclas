@@ -18,6 +18,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - Com mais de um perfil, vale a do perfil no ar; se nenhum estiver no ar, a do primeiro perfil com foto.
   - Sem foto, sem perfil ou se a imagem não carregar: continuam as iniciais.
   - A foto vem do perfil; o cadastro do cliente não ganhou campo de foto.
+- **Publicada em 13/10/2026:** os arquivos do site e do painel no ar conferidos contra o pacote.
 - **Banco:** não mudou. A lista de clientes passou a buscar também a situação e a foto dos perfis de cada cliente.
 
 ## v1.3.0 · 13/10/2026: link para o cliente editar o próprio perfil (ponto de restauração `versao-1.3.0`)
