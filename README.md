@@ -192,7 +192,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 
 - **Código e documentação:** tudo fica no GitHub, no repositório `BruTeclas/NFCliente`, com o histórico completo das versões. Mantenha-o **privado** (*Settings → General → Danger Zone → Change visibility*). O resumo do que mudou em cada data está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
 - **Versões:** cada melhoria publicada ganha um número (`v1.0.0`, `v1.1.0`…) e um **ponto de restauração**, um branch `versao-X.Y.Z` no GitHub. Ele fica congelado com o site, a documentação e a estrutura do banco daquela versão. A lista está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
-- **Versão estável atual:** `v1.0.0`, no branch `versao-1.0.0`.
+- **Versão atual:** `v1.1.0`, no branch `versao-1.1.0`. A anterior, `v1.0.0`, está no branch `versao-1.0.0`.
 - **Voltar a uma versão:** siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md).
 - **Opcional, com download em ZIP pelo GitHub:**
   1. Abra **Releases → Draft a new release**.

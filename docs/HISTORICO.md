@@ -27,7 +27,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
   - **Histórico:** cada vez que o cliente salva, a versão anterior fica guardada, e você pode desfazer.
   - **Vencimento:** o link para de funcionar se o perfil estiver desativado ou vencido (v1.1.0).
 
-## v1.1.0 · 13/10/2026: perfil sai do ar sozinho quando a cobrança vence
+## v1.1.0 · 13/10/2026: perfil sai do ar sozinho quando a cobrança vence (ponto de restauração `versao-1.1.0`)
 
 - **Regra:**
   - com data de vencimento, a página continua no ar até 3 dias depois do vencimento (carência);
