@@ -10,7 +10,7 @@ AddDefaultCharset utf-8
   RewriteEngine On
 
   # Só abre pelo endereço do painel (nunca por nfcliente.com.br/painel-admin)
-  RewriteCond %{HTTP_HOST} !^admin\.nfcliente\.com\.br$ [NC]
+  RewriteCond %{HTTP_HOST} !^admin\.nfcliente\.com\.br(:[0-9]+)?$ [NC]
   RewriteRule ^ - [R=404,L]
 
   # Sempre HTTPS
