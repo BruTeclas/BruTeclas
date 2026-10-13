@@ -1,9 +1,9 @@
 # Como restaurar o sistema a partir do backup
 
-Cada backup é uma **tag** no GitHub, por exemplo `backup-2026-10-06`. Ela guarda o código e a documentação exatamente como estavam naquele dia.
+Cada backup é uma **tag** no GitHub, por exemplo `backup-2026-10-13`. Ela guarda o código e a documentação exatamente como estavam naquele dia. Sem uma tag, use a versão mais recente do repositório: **Code → Download ZIP**.
 
 > **O que a tag NÃO guarda:** os dados do banco (clientes, perfis, fotos) e as configurações dos painéis do Supabase e da Hostinger.
-> Os dados de clientes têm CPF, telefone e endereço. **Nunca** os coloque neste repositório. Ele é privado, mas um backup de código não é lugar para dados pessoais.
+> Os dados de clientes têm CPF, telefone e endereço. **Nunca** os coloque neste repositório: mesmo privado, um backup de código não é lugar para dados pessoais.
 > Para os dados, use o backup do próprio Supabase (plano Pro) ou exporte as tabelas `clientes` e `perfis` em CSV pelo *Table Editor* e guarde em local privado.
 
 ## 1. Baixar o código da tag
@@ -33,6 +33,8 @@ python3 publicar/montar-pacote.py      # gera publicar/nfcliente-site.zip
 ```
 
 Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**. Envie o `nfcliente-site.zip` para `public_html` e extraia. O `.htaccess` vai junto e já faz `/<link>` abrir o perfil e `/admin` abrir o painel.
+
+Antes de enviar, se quiser conferir no computador: `node ferramentas/servidor-local.js` e abra `http://localhost:3000/admin`.
 
 ## 4. Conferir
 

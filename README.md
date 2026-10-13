@@ -15,8 +15,8 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
         cria, edita, ativa, desativa, exclui
 ```
 
-- **Site (gratuito):** arquivos estáticos no Netlify ou Vercel, com o seu domínio.
-- **Banco e fotos (gratuito):** [Supabase](https://supabase.com) guarda os perfis, as imagens e o seu login.
+- **Site:** arquivos estáticos na Hostinger, em `nfcliente.com.br` (veja *Hospedagem*).
+- **Banco e fotos:** o [Supabase](https://supabase.com) guarda clientes, perfis, imagens e o seu login. Hoje está no plano gratuito (veja *Plano do Supabase*).
 - O endereço do chaveiro **nunca muda**. Você altera links, fotos e situação pelo painel e a página atualiza na hora.
 
 ### Situação de cada perfil
@@ -66,12 +66,24 @@ O **endereço não entra sozinho**. Num chaveiro perdido ou numa coleira de pet,
 
 ## Testar no computador
 
-```bash
-npx serve .          # ou: python3 -m http.server 3000
-```
-Abra `http://localhost:3000/admin`. Para ver uma página de perfil, use `http://localhost:3000/perfil.html?p=<link>`.
+Precisa só do [Node.js](https://nodejs.org); não é preciso instalar mais nada.
 
-Com `supabaseUrl` vazio em `js/config.js`, o painel roda em **modo demonstração**: os dados ficam só no navegador e qualquer e-mail e senha entram.
+```bash
+node ferramentas/servidor-local.js --demo   # modo demonstração: nada vai para o banco
+node ferramentas/servidor-local.js          # usa o Supabase de verdade (dados reais!)
+```
+
+Abra `http://localhost:3000/admin`. Um perfil abre em `http://localhost:3000/<link>`, como no site.
+
+O servidor local aplica as mesmas regras e cabeçalhos de segurança do `.htaccess`: `/<link>`, `/admin`, CSP e bloqueio de arquivos internos. Assim, o que funciona nele funciona na Hostinger.
+
+- **Modo demonstração (`--demo`):**
+  - os dados ficam só no navegador;
+  - qualquer e-mail e senha entram;
+  - já vêm 3 perfis de exemplo.
+
+  Nada é alterado em `js/config.js`.
+- **Sem `--demo`:** o login e as alterações valem no banco de verdade, como no site.
 
 ## Supabase: o que já está pronto
 
@@ -85,12 +97,12 @@ O projeto **NFC Ambiente** já está configurado:
 - **E-mail autorizado como administrador:** `bru.teclas@gmail.com`. A conta com esse e-mail vira administradora sozinha quando é criada e confirmada.
 - **`js/config.js`** já aponta para o projeto, com a chave **pública** (publishable).
 
-## Supabase: o que falta (só no painel do Supabase, ~10 min)
+## Supabase: configurações do painel
 
-Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com/dashboard](https://supabase.com/dashboard), no projeto **NFC Ambiente**:
+Essas opções não podem ser mudadas pelo banco. Elas foram feitas em outubro de 2026, em [supabase.com/dashboard](https://supabase.com/dashboard), no projeto **NFC Ambiente**. Confira de vez em quando e refaça tudo se criar um projeto novo:
 
 1. **Authentication → URL Configuration**
-   - **Site URL:** o endereço do site, por exemplo `https://nfcliente.com.br`. Enquanto testa no computador, use `http://localhost:3000`.
+   - **Site URL:** `https://nfcliente.com.br`.
    - **Redirect URLs:** adicione `https://nfcliente.com.br/admin/redefinir-senha.html` e `http://localhost:3000/admin/redefinir-senha.html`.
 2. **Authentication → Sign In / Providers**
    - Em **User Signups**:
@@ -116,6 +128,14 @@ Essas opções não podem ser mudadas pelo banco. Faça uma vez em [supabase.com
 
 **Outro administrador:** no **SQL Editor**, rode `insert into public.admins_autorizados (email) values ('email@exemplo.com');` e depois convide o e-mail em **Users → Invite user**.
 
+### Plano do Supabase
+
+O projeto está no **plano gratuito**:
+
+- **Pausa por inatividade:** o projeto pausa depois de cerca de **7 dias sem uso**. Enquanto estiver pausado, **todos os chaveiros param de funcionar**. Para reativar, entre no painel do Supabase e clique em *Restore project*.
+- **Cotas:** há limite de tráfego (5 GB por mês, contando as fotos baixadas pelos visitantes) e de espaço para fotos (1 GB). Acompanhe em **Settings → Usage**.
+- **Para não depender disso:** o **plano Pro** não pausa, tem backup diário e permite um limite de gastos (*spend cap*).
+
 ## Hospedagem (Hostinger: nfcliente.com.br)
 
 O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), com SSL Let's Encrypt ativo e redirecionamento para HTTPS.
@@ -126,7 +146,7 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
   - **CSP:** a lista de onde o site pode carregar scripts, estilos, fotos e conexões.
   
   Se um dia o site precisar de outro serviço externo (por exemplo, fotos de outro endereço ou um script de estatísticas), inclua esse endereço na linha `Content-Security-Policy`. Sem isso, o navegador bloqueia.
-- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. README, SQL e modelos de e-mail ficam de fora.
+- **O que vai para o servidor:** só o que está em `publicar/nfcliente-site.zip`. README, SQL, modelos de e-mail, `docs/` e `ferramentas/` ficam de fora.
 
 ### Atualizar o site
 
@@ -136,9 +156,12 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
    git add -A && git commit -m "Atualiza o site" && git push
    ```
 2. Na Hostinger, publique o pacote. Pelo hPanel: **Sites → nfcliente.com.br → Gerenciador de arquivos**, envie `nfcliente-site.zip` para `public_html` e extraia.
-   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote, que substitui o conteúdo do site. Como o repositório é privado, a Hostinger precisa de uma **chave de implantação** (*deploy key*) cadastrada no GitHub, em *Settings → Deploy keys*, só com leitura.
+   Outra opção é pedir ao Claude ("publique de novo na Hostinger"). Ele clona o repositório numa pasta temporária do servidor e publica o pacote. **O pacote substitui todo o conteúdo do site.** Para isso, Claude precisa de duas coisas:
+   - o **conector da Hostinger** autorizado nas configurações de conectores do claude.ai;
+   - acesso ao repositório. Se ele estiver privado, que é o recomendado, cadastre a **chave de implantação** (*deploy key*) da Hostinger no GitHub, em *Settings → Deploy keys*, só com leitura. A chave aparece no hPanel, em *Avançado → Git*.
+3. Confira `https://nfcliente.com.br/admin` e um perfil. Para garantir a versão nova, use uma aba anônima.
 
-> Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
+> Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras de endereço, mas **não** têm os cabeçalhos de segurança do `.htaccess` (CSP, HSTS), que precisariam ser copiados. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
 
 ## Gravar o chaveiro
 1. No painel: **Ativar novo perfil** → configure → **Liberar para o cliente**.
@@ -151,7 +174,13 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
 
 ## Backup
 
-Cada backup é uma tag `backup-AAAA-MM-DD` no GitHub, com código e documentação. Para restaurar, siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md). Os dados de clientes **não** ficam aqui; o guia explica como guardá-los à parte. O repositório é privado, mas dados pessoais de clientes continuam fora do Git.
+- **Código e documentação:** tudo fica no GitHub, no repositório `BruTeclas/BruTeclas`, com o histórico completo das versões. Mantenha-o **privado** (*Settings → General → Danger Zone → Change visibility*). O resumo do que mudou em cada data está em [`docs/HISTORICO.md`](docs/HISTORICO.md).
+- **Ponto de restauração:** uma tag `backup-AAAA-MM-DD` marca uma versão que você sabe que funciona. Para criar uma pelo GitHub:
+  1. Abra **Releases → Draft a new release**.
+  2. Em **Choose a tag**, digite `backup-AAAA-MM-DD` e escolha *Create new tag*.
+  3. Clique em **Publish release**. O GitHub gera o ZIP para download.
+- **Restaurar:** siga [`docs/RESTAURAR.md`](docs/RESTAURAR.md).
+- **Dados de clientes:** **não** ficam no GitHub, nem mesmo com o repositório privado; o guia explica como guardá-los à parte.
 
 ## Estrutura dos arquivos
 
@@ -170,6 +199,8 @@ css/perfil.css        Visual da página do perfil
 supabase/schema.sql   Tabelas, regras de segurança e armazenamento de fotos
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
 docs/RESTAURAR.md     Como restaurar tudo a partir de uma tag de backup
+docs/HISTORICO.md     O que mudou em cada versão
+ferramentas/servidor-local.js  Testar o site no computador com as regras da Hostinger
 publicar/             Pacote do site para a Hostinger e o script que o gera
 _redirects            Rotas para o Netlify
 vercel.json           Rotas para a Vercel
@@ -177,6 +208,7 @@ vercel.json           Rotas para a Vercel
 
 ## Segurança
 
+- **Contas:** mantenha a verificação em duas etapas ligada no Gmail, no GitHub, na Hostinger e no Supabase. Quem entra em uma dessas contas controla o sistema.
 - Visitantes só conseguem ler **um perfil pelo link exato** e **apenas se estiver no ar**. Não dá para listar perfis nem ver dados internos (função `perfil_publico`).
 - **Clientes, perfis e fotos:** criar, editar e excluir exige login **e** estar na tabela `admins`. Visitantes e usuários comuns não veem nenhum dado de cliente.
 - **Quem pode virar administrador:** a lista `admins_autorizados` só pode ser mudada pelo SQL Editor; nem um administrador consegue alterá-la pelo site. A promoção automática só vale para contas criadas pelo painel do Supabase (*Add user* ou *Invite user*) depois de o e-mail ser autorizado. Contas do cadastro público nunca viram administradoras.
