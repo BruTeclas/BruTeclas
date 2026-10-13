@@ -103,7 +103,7 @@ O servidor local aplica as mesmas regras e cabeçalhos de segurança dos dois `.
 - **Modo demonstração (`--demo`):**
   - os dados ficam só no navegador;
   - qualquer e-mail e senha entram;
-  - já vêm 3 perfis de exemplo.
+  - já vêm 3 perfis de exemplo, criados quando você abre o painel. Abra o painel antes de abrir um perfil.
 
   Nada é alterado em `js/config.js`.
 - **Sem `--demo`:** o login e as alterações valem no banco de verdade, como no site.
@@ -198,7 +198,13 @@ O site está publicado na Hostinger, no plano Premium (usuário `u253849728`), c
    - acesso ao repositório. Se ele estiver privado, que é o recomendado, cadastre a **chave de implantação** (*deploy key*) da Hostinger no GitHub, em *Settings → Deploy keys*, só com leitura. A chave aparece no hPanel, em *Avançado → Git*.
 3. Confira `https://admin.nfcliente.com.br` e um perfil. Para garantir a versão nova, use uma aba anônima.
 
-> Netlify e Vercel também funcionam: `_redirects` e `vercel.json` têm as mesmas regras de endereço, mas **não** têm os cabeçalhos de segurança do `.htaccess` (CSP, HSTS), que precisariam ser copiados. GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
+> **Netlify e Vercel:** `_redirects` e `vercel.json` são da época em que o painel ficava em `/admin` no mesmo endereço e **não** foram adaptados à v1.2.0. Para usar outro serviço seria preciso:
+> - publicar o painel num endereço próprio;
+> - copiar os cabeçalhos de segurança dos dois `.htaccess`.
+>
+> A página pública apaga o login do painel guardado no endereço do site, então painel e perfis não podem dividir o mesmo endereço.
+>
+> GitHub Pages não serve, porque não consegue mandar `/<link>` para a página do perfil.
 
 ## Gravar o chaveiro
 1. No painel: **Ativar novo perfil** → configure → **Liberar para o cliente**.

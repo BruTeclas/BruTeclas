@@ -33,6 +33,7 @@
     var limite = String(d.getUTCFullYear()).padStart(4, "0") + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
     return hojeBrasilia() > limite;
   }
+  function semDadosDemo() { try { return !localStorage.getItem("bt_demo_perfis"); } catch (e) { return true; } }
   function perfilDemo(slug) {
     var lista;
     try { lista = JSON.parse(localStorage.getItem("bt_demo_perfis") || "[]"); } catch (e) { lista = []; }
@@ -61,5 +62,9 @@
   }
 
   limparSessaoAntiga();
-  window.Publico = { perfil: perfil, urlPerfil: function (slug) { return urlBase() + "/" + slug; }, demo: !configurado };
+  window.Publico = {
+    perfil: perfil, urlPerfil: function (slug) { return urlBase() + "/" + slug; }, demo: !configurado,
+    // Modo demonstração sem nenhum perfil guardado neste navegador (o painel de demonstração cria os exemplos)
+    semDadosDemo: function () { return !configurado && semDadosDemo(); }
+  };
 })();

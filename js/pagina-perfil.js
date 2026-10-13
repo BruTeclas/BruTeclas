@@ -19,6 +19,7 @@
   if (!/^[a-z0-9-]{1,40}$/i.test(slug)) return indisponivel();
 
   Publico.perfil(slug).then(function (d) {
+    if (!d && Publico.semDadosDemo()) return aviso("fa-solid fa-flask", "Modo demonstração", "Abra o painel (/admin/) neste navegador para criar os perfis de exemplo.");
     if (!d) return indisponivel();
     document.title = d.nome || "Links";
     var desc = document.createElement("meta");

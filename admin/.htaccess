@@ -17,8 +17,9 @@ AddDefaultCharset utf-8
   RewriteCond %{HTTPS} off
   RewriteRule ^ https://admin.nfcliente.com.br%{REQUEST_URI} [L,R=301]
 
-  # Nada de PHP (como a página padrão da Hostinger) nem de arquivos ocultos
-  RewriteRule (^|/)\. - [R=404,L]
+  # Nada de PHP (como a página padrão da Hostinger) nem de arquivos ocultos.
+  # Exceção: /.well-known/acme-challenge/, usada pela Hostinger para renovar o certificado HTTPS.
+  RewriteRule (^|/)\.(?!well-known/acme-challenge/) - [R=404,L]
   RewriteRule \.php$ - [R=404,L]
 
   # Endereços antigos (/admin/...), inclusive os links dos e-mails de senha: mesma página, sem o /admin.

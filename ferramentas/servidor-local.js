@@ -70,7 +70,7 @@ http.createServer(function (req, res) {
   if (painel) {
     // admin.localhost: como admin.nfcliente.com.br (admin/.htaccess)
     const h = cabecalhos(path.join(PAINEL, ".htaccess"));
-    if (/(^|\/)\.|\.php$/.test(url)) return naoAchou(h);
+    if (/(^|\/)\.(?!well-known\/acme-challenge\/)|\.php$/.test(url)) return naoAchou(h);
     const antigo = /^\/admin(?:\/+(.*))?$/.exec(url);
     if (antigo) {
       // Como no .htaccess: destino sempre neste endereço ("/admin//outro-site" não sai daqui)
@@ -87,7 +87,7 @@ http.createServer(function (req, res) {
   if (url.startsWith("/admin/")) {
     // Atalho do computador: o painel no mesmo endereço do site
     const h = cabecalhos(path.join(PAINEL, ".htaccess"));
-    if (/(^|\/)\.|\.php$/.test(url)) return naoAchou(h);
+    if (/(^|\/)\.(?!well-known\/acme-challenge\/)|\.php$/.test(url)) return naoAchou(h);
     const f = arquivo(PAINEL, url.slice("/admin".length));
     return f ? enviar(res, f, h) : naoAchou(h);
   }
