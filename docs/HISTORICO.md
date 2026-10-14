@@ -12,6 +12,19 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
+## v1.5.0 · 14/10/2026: teste grátis de 3 dias (ponto de restauração `versao-1.5.0`)
+
+- **Teste grátis:** botão **"Teste 3 dias"** nos perfis em configuração. A página fica no ar hoje e mais 3 dias e depois sai sozinha.
+  - Usa o vencimento automático da v1.1.0: o vencimento fica no dia do início.
+  - Durante o teste, já dá para gerar o link para o cliente editar (v1.3.0).
+- **Efetivar:** quando o cliente fecha, o teste vira assinatura: no ar e vencimento daqui a 1 mês. Renovar ou mudar o vencimento no editor também efetiva.
+- **Selos e filtros:** "Em teste · até dd/mm" e "Teste não fechou", com filtros próprios. Os testes ficam fora do filtro "Vencidos".
+- **Banco: mudou.**
+  - Campo novo `perfis.teste_desde` (dia em que o teste começou). A página pública e as regras de segurança não mudaram.
+  - Script: `supabase/versoes/v1.5.0.sql`, também incluído no `schema.sql`.
+  - Para desfazer: `supabase/versoes/v1.5.0-desfazer.sql`.
+- **Caixa de ideias:** as próximas evoluções ficam em [`IDEIAS.md`](IDEIAS.md).
+
 ## v1.4.0 · 13/10/2026: foto do perfil na lista de clientes (ponto de restauração `versao-1.4.0`)
 
 - **Foto do cliente:** na aba Clientes, a bolinha com as iniciais passa a mostrar a foto do perfil ligado ao cliente.

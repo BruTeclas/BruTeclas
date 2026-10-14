@@ -418,6 +418,12 @@ revoke execute on function public.guardar_historico(), public.cliente_perfil_da_
   public.cliente_autorizar_envio(text) from anon, authenticated;
 revoke execute on function public.gerar_link_cliente(uuid), public.revogar_link_cliente(uuid) from anon;
 
+-- -----------------------------------------------------------------------------
+-- Teste grátis (v1.5.0). Desfazer: versoes/v1.5.0-desfazer.sql
+-- -----------------------------------------------------------------------------
+alter table public.perfis add column if not exists teste_desde date;
+comment on column public.perfis.teste_desde is 'Dia em que o teste grátis começou (v1.5.0). Vazio: não é teste, ou o cliente foi efetivado.';
+
 -- =============================================================================
 -- Quem é administrador: inclua o e-mail aqui ANTES de criar a conta pelo painel
 -- (Authentication > Users > Add user ou Invite user). A conta vira administradora

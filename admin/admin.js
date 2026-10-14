@@ -21,7 +21,9 @@
     ativo: ["No ar", "O cliente e qualquer pessoa que ler o chaveiro veem a página."],
     inativo: ["Desativado", "Fora do ar. Quem acessar vê \"Perfil temporariamente indisponível\". Nada foi apagado."],
     rascunho: ["Em configuração", "Ainda não liberado. Quem acessar vê \"Em breve\"."],
-    vencido: ["Fora do ar · vencido", "O vencimento passou há mais de " + DB.CARENCIA_DIAS + " dias e a página saiu do ar sozinha. Quem acessar vê \"Perfil temporariamente indisponível\". Nada foi apagado. Renove o vencimento e ela volta na hora."]
+    vencido: ["Fora do ar · vencido", "O vencimento passou há mais de " + DB.CARENCIA_DIAS + " dias e a página saiu do ar sozinha. Quem acessar vê \"Perfil temporariamente indisponível\". Nada foi apagado. Renove o vencimento e ela volta na hora."],
+    teste: ["Em teste", "Teste grátis: a página está no ar e sai sozinha no fim do teste. Se o cliente fechar, clique em \"Efetivar\"."],
+    "nao-fechou": ["Teste não fechou", "O teste acabou sem o cliente fechar, e a página está fora do ar. Nada foi apagado. Se ele fechar depois, clique em \"Efetivar\"."]
   };
 
   // ===========================================================================
@@ -42,12 +44,19 @@
   function dataBR(iso) { if (!iso) return ""; var p = String(iso).slice(0, 10).split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
   // Venceu (em carência ou já fora do ar). Fora do ar por vencimento: DB.foraPorVencimento(p)
   function vencido(p) { var s = DB.situacaoVencimento(p.vencimento).situacao; return s === "carencia" || s === "fora"; }
-  function statusVisivel(p) { return DB.foraPorVencimento(p) ? "vencido" : p.status; }
+  function statusVisivel(p) {
+    var t = DB.situacaoTeste(p);
+    if (t) return t.situacao;   // "teste" ou "nao-fechou"
+    return DB.foraPorVencimento(p) ? "vencido" : p.status;
+  }
   function nomeDe(p) { return (p.dados && p.dados.nome) || (p.cliente && p.cliente.nome) || p.slug; }
   function selo(status) { return el("span", { class: "selo " + status, text: TEXTO_STATUS[status][0] }); }
   function seloPerfil(p) { return selo(statusVisivel(p)); }
   // Texto do vencimento na lista e no editor
   function textoVencimento(p) {
+    var t = DB.situacaoTeste(p);
+    if (t) return t.situacao === "teste" ? { classe: "vence-logo", texto: " Teste até " + dataBR(t.ate) }
+      : { classe: "vencido", texto: p.status === "ativo" ? " Teste terminou em " + dataBR(t.ate) : " Teste encerrado" };
     var v = DB.situacaoVencimento(p.vencimento);
     if (v.situacao === "sem") return null;
     if (v.situacao === "fora") return { classe: "vencido", texto: " Venceu " + dataBR(v.vencimento) + (p.status === "ativo" ? " · fora do ar desde " + dataBR(v.saiDoAr) : "") };
@@ -149,6 +158,7 @@
 
   // Renova o vencimento por 1 mês, contando do vencimento anterior (ou de hoje, se não havia)
   function renovar(p) {
+    if (p.teste_desde) return efetivar(p);   // em teste, renovar é efetivar
     var atual = DB.dataISO(p.vencimento);
     var base = atual && +atual.slice(0, 4) >= 2000 ? atual : DB.hojeBrasilia();   // data absurda: conta a partir de hoje
     var novo = DB.somarMes(base);
@@ -164,6 +174,38 @@
       if (!sim) return null;
       return DB.salvar(p.id, { vencimento: novo }).then(function (r) {
         toast("Renovado até " + dataBR(novo) + (volta ? ". Perfil de volta no ar! ✅" : "."));
+        return r;
+      });
+    }).catch(function (e) { falhou(e); return null; });
+  }
+
+  // Teste grátis: no ar hoje e mais CARENCIA_DIAS dias; depois sai sozinho (pelo vencimento automático)
+  function liberarTeste(p) {
+    if (!(p.dados && p.dados.nome)) { toast("Preencha pelo menos o nome exibido antes de liberar.", true); return Promise.resolve(null); }
+    var hoje = DB.hojeBrasilia(), ate = DB.situacaoTeste({ status: "ativo", vencimento: hoje, teste_desde: hoje }).ate;
+    return confirmar({
+      titulo: "Liberar teste de " + DB.CARENCIA_DIAS + " dias?",
+      texto: "A página " + DB.urlPerfil(p.slug) + " fica no ar até " + dataBR(ate) + " e depois sai do ar sozinha. Se o cliente fechar, clique em \"Efetivar\". Durante o teste, você já pode gerar o link para ele editar o perfil.",
+      botao: "Liberar teste", classe: "verde"
+    }).then(function (sim) {
+      if (!sim) return null;
+      return DB.salvar(p.id, { status: "ativo", vencimento: hoje, teste_desde: hoje }).then(function (r) {
+        toast("Teste liberado até " + dataBR(ate) + "! ✅");
+        return r;
+      });
+    }).catch(function (e) { falhou(e); return null; });
+  }
+  // O cliente fechou: sai do teste, fica no ar e vence daqui a 1 mês
+  function efetivar(p) {
+    var novo = DB.somarMes(DB.hojeBrasilia());
+    return confirmar({
+      titulo: "Efetivar o cliente?",
+      texto: "O teste vira assinatura: a página fica no ar e o próximo vencimento passa a ser " + dataBR(novo) + ".",
+      botao: "Efetivar", classe: "verde"
+    }).then(function (sim) {
+      if (!sim) return null;
+      return DB.salvar(p.id, { status: "ativo", vencimento: novo, teste_desde: null }).then(function (r) {
+        toast("Cliente efetivado! Vence em " + dataBR(novo) + ". ✅");
         return r;
       });
     }).catch(function (e) { falhou(e); return null; });
@@ -371,15 +413,16 @@
 
   function desenharLista() {
     var todos = estado.perfis;
-    var cont = { ativo: 0, inativo: 0, rascunho: 0, vencido: 0 };
+    var cont = { ativo: 0, inativo: 0, rascunho: 0, vencido: 0, teste: 0, "nao-fechou": 0 };
     todos.forEach(function (p) { cont[statusVisivel(p)]++; });
-    $("resumo").textContent = todos.length + " perfis · " + cont.ativo + " no ar · " + (cont.vencido ? cont.vencido + " fora do ar por vencimento · " : "") +
-      cont.inativo + " desativados · " + cont.rascunho + " em configuração";
+    $("resumo").textContent = todos.length + " perfis · " + cont.ativo + " no ar · " + (cont.teste ? cont.teste + " em teste · " : "") +
+      (cont.vencido ? cont.vencido + " fora do ar por vencimento · " : "") + cont.inativo + " desativados · " + cont.rascunho + " em configuração" +
+      (cont["nao-fechou"] ? " · " + cont["nao-fechou"] + (cont["nao-fechou"] === 1 ? " teste não fechou" : " testes não fecharam") : "");
 
     var b = estado.busca.trim().toLowerCase();
     var vis = todos.filter(function (p) {
-      if (estado.filtro === "vencidos" && !vencido(p)) return false;
-      if (["ativo", "inativo", "rascunho"].indexOf(estado.filtro) >= 0 && statusVisivel(p) !== estado.filtro) return false;
+      if (estado.filtro === "vencidos" && (!vencido(p) || p.teste_desde)) return false;   // testes têm filtros próprios
+      if (["ativo", "inativo", "rascunho", "teste", "nao-fechou"].indexOf(estado.filtro) >= 0 && statusVisivel(p) !== estado.filtro) return false;
       if (!b) return true;
       var c = p.cliente || {};
       return [p.slug, c.nome, c.telefone, c.whatsapp, c.email, p.dados && p.dados.nome].join(" ").toLowerCase().indexOf(b) >= 0;
@@ -404,9 +447,14 @@
       var acoes = [
         el("a", { class: "btn pequeno", href: "#/perfil/" + p.id }, [icone("fa-solid fa-pen"), " Editar"])
       ];
-      if (p.status !== "rascunho" && tv && tv.classe) acoes.push(el("button", { class: "btn pequeno verde-leve", type: "button", title: "Somar 1 mês ao vencimento", onclick: function () { renovar(p).then(atualizarItem); } }, [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
-      if (p.status === "ativo") acoes.push(el("button", { class: "btn pequeno perigo-leve", type: "button", onclick: function () { mudarStatus(p, "inativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
-      else acoes.push(el("button", { class: "btn pequeno", type: "button", onclick: function () { mudarStatus(p, "ativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-play"), p.status === "rascunho" ? " Liberar" : " Reativar"]));
+      var t = DB.situacaoTeste(p);
+      if (t) acoes.push(el("button", { class: "btn pequeno verde-leve", type: "button", title: "O cliente fechou: fica no ar e vence daqui a 1 mês", onclick: function () { efetivar(p).then(atualizarItem); } }, [icone("fa-solid fa-handshake"), " Efetivar"]));
+      else if (p.status !== "rascunho" && tv && tv.classe) acoes.push(el("button", { class: "btn pequeno verde-leve", type: "button", title: "Somar 1 mês ao vencimento", onclick: function () { renovar(p).then(atualizarItem); } }, [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
+      if (p.status === "ativo" && !(t && t.situacao === "nao-fechou")) acoes.push(el("button", { class: "btn pequeno perigo-leve", type: "button", onclick: function () { mudarStatus(p, "inativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
+      else if (p.status === "rascunho") acoes.push(
+        el("button", { class: "btn pequeno", type: "button", onclick: function () { mudarStatus(p, "ativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-play"), " Liberar"]),
+        el("button", { class: "btn pequeno", type: "button", title: "No ar por " + DB.CARENCIA_DIAS + " dias para o cliente experimentar", onclick: function () { liberarTeste(p).then(atualizarItem); } }, [icone("fa-solid fa-hourglass-half"), " Teste " + DB.CARENCIA_DIAS + " dias"]));
+      else if (!t) acoes.push(el("button", { class: "btn pequeno", type: "button", onclick: function () { mudarStatus(p, "ativo").then(atualizarItem); } }, [icone("fa-solid fa-circle-play"), " Reativar"]));
       acoes.push(
         el("button", { class: "btn pequeno icone", type: "button", title: "QR Code", "aria-label": "QR Code", onclick: function () { mostrarQR(p); } }, [icone("fa-solid fa-qrcode")]),
         el("button", { class: "btn pequeno icone", type: "button", title: "Copiar link", "aria-label": "Copiar link", onclick: function () { Perfil.copiar(url, "Link copiado!"); } }, [icone("fa-regular fa-copy")]),
@@ -612,11 +660,14 @@
     cabecalhoEditor();
 
     // --- Status e link ---------------------------------------------------------
-    var stVis = statusVisivel(ed.orig) === "vencido" ? "vencido" : p.status;
+    var svOrig = statusVisivel(ed.orig), tOrig = DB.situacaoTeste(ed.orig);
+    var stVis = ["vencido", "teste", "nao-fechou"].indexOf(svOrig) >= 0 ? svOrig : p.status;
     var st = TEXTO_STATUS[stVis];
     var botoesStatus = el("div", { class: "status-botoes" });
     var vOrig = DB.situacaoVencimento(ed.orig.vencimento);
-    var avisoVenc = p.status === "ativo" && vOrig.situacao === "carencia"
+    var avisoVenc = tOrig && tOrig.situacao === "teste"
+      ? el("p", { class: "aviso-vencimento" }, [icone("fa-solid fa-hourglass-half"), " Teste até " + dataBR(tOrig.ate) + ". Depois disso, a página sai do ar sozinha. Se o cliente fechar, clique em \"Efetivar\"."])
+      : p.status === "ativo" && vOrig.situacao === "carencia"
       ? el("p", { class: "aviso-vencimento" }, [icone("fa-solid fa-triangle-exclamation"), " Venceu em " + dataBR(vOrig.vencimento) + ". Se não for renovado, sai do ar sozinho em " + dataBR(vOrig.saiDoAr) + "."])
       : null;
     function acaoStatus(novo) {
@@ -630,20 +681,32 @@
         });
       });
     }
+    function acaoTeste() {
+      var antes = estado.ed.sujo ? salvar() : Promise.resolve(true);
+      antes.then(function (ok) {
+        if (!ok) return;
+        liberarTeste(estado.ed.p).then(function (r) {
+          if (!r || !estado.ed) return;
+          ["status", "vencimento", "teste_desde"].forEach(function (k) { estado.ed.p[k] = estado.ed.orig[k] = r[k]; });
+          desenharEditor();
+        });
+      });
+    }
     if (p.status === "rascunho") botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () { acaoStatus("ativo"); } }, [icone("fa-solid fa-rocket"), " Liberar para o cliente"]));
-    if (p.status === "inativo") botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () { acaoStatus("ativo"); } }, [icone("fa-solid fa-circle-play"), " Reativar"]));
-    if (p.status === "ativo" && (vOrig.situacao === "fora" || vOrig.situacao === "carencia")) botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () {
+    if (p.status === "rascunho") botoesStatus.appendChild(el("button", { class: "btn", type: "button", onclick: acaoTeste }, [icone("fa-solid fa-hourglass-half"), " Liberar teste (" + DB.CARENCIA_DIAS + " dias)"]));
+    if (p.status === "inativo" && !tOrig) botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () { acaoStatus("ativo"); } }, [icone("fa-solid fa-circle-play"), " Reativar"]));
+    if (tOrig || p.status === "ativo" && (vOrig.situacao === "fora" || vOrig.situacao === "carencia")) botoesStatus.appendChild(el("button", { class: "btn verde", type: "button", onclick: function () {
       var antes = estado.ed.sujo ? salvar() : Promise.resolve(true);
       antes.then(function (ok) {
         if (!ok) return;
         renovar(estado.ed.orig).then(function (r) {
           if (!r || !estado.ed) return;
-          estado.ed.p.vencimento = estado.ed.orig.vencimento = r.vencimento;
+          ["status", "vencimento", "teste_desde"].forEach(function (k) { estado.ed.p[k] = estado.ed.orig[k] = r[k]; });
           desenharEditor();
         });
       });
-    } }, [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
-    if (p.status === "ativo") botoesStatus.appendChild(el("button", { class: "btn perigo", type: "button", onclick: function () { acaoStatus("inativo"); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
+    } }, tOrig ? [icone("fa-solid fa-handshake"), " Efetivar (+1 mês)"] : [icone("fa-solid fa-rotate-right"), " Renovar +1 mês"]));
+    if (p.status === "ativo" && !(tOrig && tOrig.situacao === "nao-fechou")) botoesStatus.appendChild(el("button", { class: "btn perigo", type: "button", onclick: function () { acaoStatus("inativo"); } }, [icone("fa-solid fa-circle-pause"), " Desativar"]));
 
     var slugInput = el("input", { type: "text", maxlength: "40" });
     slugInput.value = p.slug;
@@ -856,6 +919,8 @@
       vencimento: p.vencimento || null, observacoes: p.observacoes || null
     };
     if (p.slug !== ed.orig.slug) patch.slug = p.slug;
+    // Mudar o vencimento de um perfil em teste conta como efetivar
+    if (ed.orig.teste_desde && DB.dataISO(p.vencimento) !== DB.dataISO(ed.orig.vencimento)) patch.teste_desde = null;
     var antigas = [ed.orig.dados.foto, ed.orig.dados.capa];
 
     ed.salvando = DB.salvar(p.id, patch).then(function (r) {
@@ -872,6 +937,7 @@
       ed.p.slug = r.slug;
       ed.p.cliente = r.cliente || null;
       ed.p.vencimento = r.vencimento;
+      ed.p.teste_desde = r.teste_desde || null;
       if (slugMudou || vencMudou) { var y = window.scrollY; desenharEditor(); window.scrollTo(0, y); }   // a situação (no ar / vencido) pode ter mudado
       else { cabecalhoEditor(); marcarSujo(); }
       toast("Salvo! ✅");

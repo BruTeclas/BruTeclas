@@ -89,6 +89,16 @@
   }
   function foraPorVencimento(p) { return p.status === "ativo" && situacaoVencimento(p.vencimento).situacao === "fora"; }
 
+  // Teste grátis (v1.5.0): o perfil vai ao ar com vencimento no dia do início (teste_desde) e fica no ar
+  // mais CARENCIA_DIAS dias, até "ate". Depois sai sozinho, pelo vencimento automático.
+  // situacao: "teste" (no ar, testando) ou "nao-fechou" (acabou ou foi desativado sem efetivar). null: não é teste.
+  function situacaoTeste(p) {
+    if (!p || !p.teste_desde) return null;
+    var ate = somarDias(dataISO(p.vencimento) || dataISO(p.teste_desde), CARENCIA_DIAS);
+    var noAr = p.status === "ativo" && situacaoVencimento(p.vencimento).situacao !== "fora";
+    return { situacao: noAr ? "teste" : "nao-fechou", ate: ate };
+  }
+
   // Foto do cliente na lista de clientes: a do perfil no ar; se nenhum estiver no ar, a do primeiro perfil com foto.
   // perfis: [{ status, vencimento, created_at, foto }]
   function fotoDoCliente(perfis) {
@@ -688,5 +698,6 @@
   db.validarVencimento = validarVencimento;
   db.situacaoVencimento = situacaoVencimento;
   db.foraPorVencimento = foraPorVencimento;
+  db.situacaoTeste = situacaoTeste;
   window.DB = db;
 })();

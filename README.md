@@ -32,6 +32,8 @@ que é gravado no chaveiro. Quando alguém aproxima o chaveiro do celular, a pá
 | **No ar** | A página completa | Depois de clicar em "Liberar para o cliente" |
 | **Desativado** | "Perfil indisponível" | Quando você quiser tirar do ar. **Nada é apagado** e dá para reativar com um clique |
 | **Fora do ar · vencido** | "Perfil indisponível" | **Automático:** 3 dias depois do vencimento sem renovação. Ao renovar, volta na hora (veja *Vencimento*) |
+| **Em teste** | A página completa | Depois de "Teste 3 dias": no ar hoje e mais 3 dias (veja *Teste grátis*) |
+| **Teste não fechou** | "Perfil indisponível" | **Automático:** o teste acabou sem você clicar em "Efetivar" |
 | **Excluído** | "Perfil indisponível" | Apaga página, links, fotos e dados internos, **sem volta**. Pede para digitar o link como confirmação |
 
 Quem lê o chaveiro vê **a mesma mensagem** para link desativado, vencido, em configuração, excluído ou que nunca existiu. Assim ninguém descobre quais links existem (desde a v1.2.0).
@@ -65,6 +67,17 @@ Cada perfil pode ter uma data de **próximo vencimento**.
 - **Sem data de vencimento:** o perfil nunca sai do ar sozinho.
 - **Desativado à mão:** continua desligado mesmo depois de renovar. Use **Reativar**.
 - **Quem decide é o banco:** o próprio banco confere a data a cada acesso, no horário de Brasília. Não depende de nenhuma rotina agendada nem do painel aberto. Para mudar a carência, altere o `+ 3` em `public.perfil_vencido` (`supabase/schema.sql`) e `CARENCIA_DIAS` em `js/db.js`.
+
+### Teste grátis (v1.5.0)
+
+Para o cliente experimentar antes de fechar.
+
+1. Num perfil **em configuração**, clique em **"Teste 3 dias"** (na lista) ou **"Liberar teste (3 dias)"** (no editor).
+2. A página fica no ar hoje e mais 3 dias, com o selo **EM TESTE · até dd/mm**. Já dá para gerar o link para o cliente editar.
+3. **Fechou?** Clique em **Efetivar**: a página fica no ar e vence daqui a 1 mês. Mudar o vencimento no editor também efetiva.
+4. **Não fechou?** No fim do teste a página sai do ar sozinha e o perfil ganha o selo **TESTE NÃO FECHOU**. Nada é apagado: se o cliente voltar, é só **Efetivar**.
+
+Os filtros **"Em teste"** e **"Teste não fechou"** mostram esses perfis. Eles ficam fora do filtro **"Vencidos"**, que é só para clientes pagantes atrasados.
 
 ### Clientes
 
@@ -277,6 +290,7 @@ supabase/functions/   Função cliente-imagem: recebe as fotos enviadas pelo cli
 supabase/templates/   Modelos de e-mail em português (recuperar senha, convite, senha alterada)
 docs/RESTAURAR.md     Como voltar a uma versão anterior ou restaurar tudo do zero
 docs/HISTORICO.md     O que mudou em cada versão
+docs/IDEIAS.md        Caixa de ideias: próximas evoluções, ainda não desenvolvidas
 ferramentas/servidor-local.js  Testar o site no computador com as regras da Hostinger
 publicar/             Pacote do site para a Hostinger e o script que o gera
 _redirects            Rotas para o Netlify
@@ -310,8 +324,4 @@ vercel.json           Rotas para a Vercel
 
 ## Próximas ideias
 
-- **Estatísticas:** quantas vezes cada chaveiro foi lido.
-- **Desativação automática** de perfis com vencimento atrasado há X dias.
-- **Cobrança automática:** link do Mercado Pago ou Asaas que reativa o perfil ao pagar.
-- **Modelos prontos** por segmento: salão, restaurante, pet (coleira), emergência médica, corretor.
-- **Vários links por cliente**, como os chaveiros da equipe de uma empresa.
+Ficam na caixa de ideias: [`docs/IDEIAS.md`](docs/IDEIAS.md).

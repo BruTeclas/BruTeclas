@@ -124,6 +124,8 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .selo.inativo { background: var(--vermelho-claro); color: var(--vermelho); }
 .selo.rascunho { background: var(--amarelo-claro); color: var(--amarelo); }
 .selo.vencido { background: var(--vermelho-claro); color: var(--vermelho); }
+.selo.teste { background: color-mix(in srgb, var(--primaria) 12%, #fff); color: var(--primaria); }
+.selo.nao-fechou { background: var(--cinza-claro); color: var(--texto2); }
 
 /* Editor */
 .editor { max-width: 1240px; margin: 0 auto; padding: 18px 20px 80px; }
