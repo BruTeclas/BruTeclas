@@ -12,6 +12,17 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
+## v1.6.1 · 14/10/2026: ajustar a foto do perfil (ponto de restauração `versao-1.6.1`)
+
+- **Situação:** pronta e testada; aguardando publicação.
+- **Janela "Ajustar foto":** ao escolher a foto de perfil, ela abre com o círculo do perfil por cima.
+  - Arrastar (mouse ou dedo) para posicionar o rosto, zoom na barra (ou na rodinha do mouse) e girar 90°.
+  - **Usar foto** envia o recorte; **Cancelar** (ou Esc) mantém a foto anterior.
+  - Antes, o sistema cortava sempre o centro da imagem.
+- **Botão "Ajustar"** na foto atual: reposiciona sem enviar de novo. A foto antiga já estava cortada, então dá para aproximar e mover, mas não recuperar o que ficou de fora.
+- Vale no painel e na página do cliente (o editor é o mesmo). A foto de fundo continua sendo só reduzida, porque ocupa a página inteira e o recorte muda com o tamanho da tela.
+- **Banco:** não mudou.
+
 ## v1.6.0 · 14/10/2026: destaques nas cores dos aplicativos (ponto de restauração `versao-1.6.0`)
 
 - **Publicada em 14/10/2026:** arquivos do site, do painel e da página do cliente no ar conferidos contra o pacote.

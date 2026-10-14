@@ -186,6 +186,15 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .upload input { display: none; }
 .upload-remover { position: absolute; top: 6px; right: 6px; z-index: 2; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; }
 .upload.avatar .upload-remover { top: 10px; right: 10px; }
+.upload-ajustar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 2; border: 0; border-radius: 999px; padding: 4px 10px; background: rgba(0,0,0,.65); color: #fff; font: inherit; font-size: .72rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.upload-ajustar:hover { background: var(--primaria); }
+.ajuste-foto { max-width: 360px; }
+.ajuste-area { position: relative; width: 280px; height: 280px; margin: 4px auto 0; border-radius: 12px; overflow: hidden; background: var(--cinza-claro); }
+.ajuste-area::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 200px rgba(0, 0, 0, .5); border: 2px solid rgba(255, 255, 255, .9); pointer-events: none; }
+.ajuste-tela { display: block; width: 280px; height: 280px; cursor: grab; touch-action: none; }
+.ajuste-tela:active { cursor: grabbing; }
+.ajuste-controles { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--texto2); }
+.ajuste-controles input[type=range] { flex: 1; accent-color: var(--primaria); }
 .upload-rotulo { font-size: .85rem; font-weight: 500; margin-bottom: 6px; display: block; }
 .upload.carregando::after { content: ""; position: absolute; inset: 0; background: rgba(255,255,255,.7) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Ccircle cx='25' cy='25' r='20' fill='none' stroke='%236d28d9' stroke-width='5' stroke-dasharray='90 40'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 25 25' to='360 25 25' dur='.8s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/svg%3E") center / 36px no-repeat; }
 

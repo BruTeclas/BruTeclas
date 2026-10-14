@@ -207,27 +207,118 @@
   // ---------------------------------------------------------------------------
   // Upload de imagem (redimensiona no navegador antes de enviar)
   // ---------------------------------------------------------------------------
-  function processarImagem(arquivo, max, quadrado) {
+  function erroAmigavel(msg) { return Object.assign(new Error(msg), { amigavel: true }); }
+  // Abre um arquivo (ou um endereço) como imagem
+  function abrirImagem(origem) {
     return new Promise(function (ok, falha) {
-      if (!/^image\//.test(arquivo.type)) return falha(Object.assign(new Error("Escolha um arquivo de imagem (JPG, PNG ou WEBP)."), { amigavel: true }));
-      var img = new Image(), url = URL.createObjectURL(arquivo);
-      img.onload = function () {
-        URL.revokeObjectURL(url);
-        var sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
-        if (quadrado) { var lado = Math.min(sw, sh); sx = (sw - lado) / 2; sy = (sh - lado) / 2; sw = sh = lado; }
-        var escala = Math.min(1, max / Math.max(sw, sh));
-        var c = document.createElement("canvas");
-        c.width = Math.round(sw * escala); c.height = Math.round(sh * escala);
-        var ctx = c.getContext("2d");
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
-        c.toBlob(function (b) {
-          if (b && b.type === "image/webp") return ok(b);
-          c.toBlob(function (j) { j ? ok(j) : falha(new Error("Não foi possível processar a imagem.")); }, "image/jpeg", 0.85);
-        }, "image/webp", 0.85);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); falha(Object.assign(new Error("Não foi possível abrir essa imagem."), { amigavel: true })); };
+      var arquivo = typeof origem !== "string";
+      if (arquivo && !/^image\//.test(origem.type)) return falha(erroAmigavel("Escolha um arquivo de imagem (JPG, PNG ou WEBP)."));
+      var img = new Image(), url = arquivo ? URL.createObjectURL(origem) : origem;
+      if (!arquivo && !/^data:/.test(url)) img.crossOrigin = "anonymous";   // foto já enviada: o armazenamento libera a leitura
+      img.onload = function () { if (arquivo) URL.revokeObjectURL(url); ok(img); };
+      img.onerror = function () { if (arquivo) URL.revokeObjectURL(url); falha(erroAmigavel("Não foi possível abrir essa imagem.")); };
       img.src = url;
+    });
+  }
+  // Canvas → arquivo WEBP (ou JPG, nos navegadores sem WEBP)
+  function canvasParaBlob(c) {
+    return new Promise(function (ok, falha) {
+      c.toBlob(function (b) {
+        if (b && b.type === "image/webp") return ok(b);
+        c.toBlob(function (j) { j ? ok(j) : falha(new Error("Não foi possível processar a imagem.")); }, "image/jpeg", 0.85);
+      }, "image/webp", 0.85);
+    });
+  }
+  function processarImagem(arquivo, max, quadrado) {
+    return abrirImagem(arquivo).then(function (img) {
+      var sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      if (quadrado) { var lado = Math.min(sw, sh); sx = (sw - lado) / 2; sy = (sh - lado) / 2; sw = sh = lado; }
+      var escala = Math.min(1, max / Math.max(sw, sh));
+      var c = document.createElement("canvas");
+      c.width = Math.round(sw * escala); c.height = Math.round(sh * escala);
+      var ctx = c.getContext("2d");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      return canvasParaBlob(c);
+    });
+  }
+
+  // Janela "Ajustar foto": arrastar para posicionar, zoom e girar, com o círculo do perfil por cima.
+  // Devolve a foto recortada (quadrada, até 600 px) ou null se cancelar.
+  function ajustarFoto(img) {
+    return new Promise(function (ok) {
+      var VIS = 280, SAIDA = Math.min(600, Math.max(img.naturalWidth, img.naturalHeight));
+      var dpr = Math.min(2, window.devicePixelRatio || 1);
+      var giro = 0, zoom = 1, ox = 0, oy = 0;   // giro em graus; ox/oy: deslocamento do centro da foto, em px da área visível
+      var tela = el("canvas", { class: "ajuste-tela", width: String(VIS * dpr), height: String(VIS * dpr), "aria-label": "Arraste para posicionar a foto" });
+      var regua = el("input", { type: "range", min: "1", max: "4", step: "0.01", "aria-label": "Zoom" });
+      regua.value = "1";
+      function medidas() {
+        var deitada = giro % 180 !== 0;
+        var w = deitada ? img.naturalHeight : img.naturalWidth, h = deitada ? img.naturalWidth : img.naturalHeight;
+        var esc = VIS / Math.min(w, h) * zoom;   // zoom 1: a foto cobre o quadrado inteiro
+        return { w: w * esc, h: h * esc, esc: esc };
+      }
+      function limitar() {   // a foto sempre cobre a área do recorte
+        var m = medidas(), mx = (m.w - VIS) / 2, my = (m.h - VIS) / 2;
+        ox = Math.max(-mx, Math.min(mx, ox)); oy = Math.max(-my, Math.min(my, oy));
+      }
+      function desenhar(c, lado) {
+        var ctx = c.getContext("2d"), k = lado / VIS, m = medidas();
+        ctx.clearRect(0, 0, lado, lado);
+        ctx.imageSmoothingQuality = "high";
+        ctx.save();
+        ctx.translate(lado / 2 + ox * k, lado / 2 + oy * k);
+        ctx.rotate(giro * Math.PI / 180);
+        ctx.scale(m.esc * k, m.esc * k);
+        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+        ctx.restore();
+      }
+      function atualizar() { limitar(); desenhar(tela, VIS * dpr); }
+      function mudarZoom(z) { zoom = Math.max(1, Math.min(4, z)); regua.value = String(zoom); atualizar(); }
+
+      // Arrastar (mouse ou dedo)
+      var arraste = null;
+      tela.addEventListener("pointerdown", function (e) { arraste = { x: e.clientX, y: e.clientY }; tela.setPointerCapture(e.pointerId); });
+      tela.addEventListener("pointermove", function (e) {
+        if (!arraste) return;
+        ox += e.clientX - arraste.x; oy += e.clientY - arraste.y;
+        arraste = { x: e.clientX, y: e.clientY };
+        atualizar();
+      });
+      ["pointerup", "pointercancel"].forEach(function (ev) { tela.addEventListener(ev, function () { arraste = null; }); });
+      tela.addEventListener("wheel", function (e) { e.preventDefault(); mudarZoom(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08)); }, { passive: false });
+      regua.addEventListener("input", function () { mudarZoom(+regua.value); });
+
+      var fundo;
+      function fechar(resultado) {
+        document.removeEventListener("keydown", tecla);
+        fundo.remove();
+        ok(resultado);
+      }
+      function tecla(e) { if (e.key === "Escape") fechar(null); }
+      function usar() {
+        var c = document.createElement("canvas");
+        c.width = c.height = SAIDA;
+        desenhar(c, SAIDA);
+        fechar(c);
+      }
+      fundo = el("div", { class: "modal-fundo" }, [el("div", { class: "modal ajuste-foto", role: "dialog", "aria-modal": "true", "aria-label": "Ajustar foto" }, [
+        el("h2", { text: "Ajustar foto" }),
+        el("p", { text: "Arraste para posicionar o rosto dentro do círculo e use o zoom para aproximar." }),
+        el("div", { class: "ajuste-area" }, [tela]),
+        el("div", { class: "ajuste-controles" }, [
+          icone("fa-solid fa-magnifying-glass-minus"), regua, icone("fa-solid fa-magnifying-glass-plus"),
+          el("button", { class: "btn pequeno", type: "button", title: "Girar 90°", "aria-label": "Girar 90°", onclick: function () { giro = (giro + 90) % 360; atualizar(); } }, [icone("fa-solid fa-rotate-right")])
+        ]),
+        el("div", { class: "modal-botoes" }, [
+          el("button", { class: "btn", type: "button", text: "Cancelar", onclick: function () { fechar(null); } }),
+          el("button", { class: "btn primario", type: "button", onclick: usar }, [icone("fa-solid fa-check"), " Usar foto"])
+        ])
+      ])]);
+      document.addEventListener("keydown", tecla);
+      document.body.appendChild(fundo);
+      atualizar();
     });
   }
 
@@ -246,12 +337,24 @@
       atualizar(); marcarSujo();
     } }, [icone("fa-solid fa-xmark")]);
     caixa.appendChild(remover);
+    // Foto do perfil: reposicionar a que já está na página, sem enviar de novo
+    var ajustar = classe === "avatar" ? el("button", { class: "upload-ajustar", type: "button", onclick: function (e) {
+      e.preventDefault();
+      if (!d[chave]) return;
+      caixa.classList.add("carregando");
+      abrirImagem(d[chave]).then(function (img) { caixa.classList.remove("carregando"); return ajustarFoto(img); })
+        .then(function (c) { return c && canvasParaBlob(c).then(subir); })
+        .catch(function () { o.falhou(erroAmigavel("Não foi possível abrir a foto atual para ajustar. Envie a foto de novo.")); })
+        .then(function () { caixa.classList.remove("carregando"); });
+    } }, [icone("fa-solid fa-crop-simple"), " Ajustar"]) : null;
+    if (ajustar) caixa.appendChild(ajustar);
 
     function atualizar() {
       var u = d[chave];
       caixa.style.backgroundImage = u ? "url(\"" + String(u).replace(/"/g, "%22") + "\")" : "";
       caixa.classList.toggle("tem-imagem", !!u);
       remover.hidden = !u;
+      if (ajustar) ajustar.hidden = !u;
       if (classe === "capa") {
         // Sem foto, mostra o fundo padrão na cor e no tema atuais
         caixa.classList.toggle("fundo-padrao", !u);
@@ -262,19 +365,26 @@
       }
     }
     if (classe === "capa" && o.aoMudar) o.aoMudar.push(atualizar);
+    // Envia a imagem pronta e coloca na página (vale ao salvar)
+    function subir(blob) {
+      caixa.classList.add("carregando");
+      return o.enviarImagem(blob, chave).then(function (u) {
+        if (o.registrarImagem) o.registrarImagem(u);
+        if (o.ativo && !o.ativo()) return;   // o editor já foi fechado
+        d[chave] = u;
+        atualizar(); marcarSujo();
+      });
+    }
     function enviar(arquivo) {
       if (!arquivo) return;
-      caixa.classList.add("carregando");
-      processarImagem(arquivo, classe === "avatar" ? 600 : 1600, classe === "avatar")
-        .then(function (blob) { return o.enviarImagem(blob, chave); })
-        .then(function (u) {
-          if (o.registrarImagem) o.registrarImagem(u);
-          if (o.ativo && !o.ativo()) return;   // o editor já foi fechado
-          d[chave] = u;
-          atualizar(); marcarSujo();
-        })
+      // Foto do perfil: abre a janela de ajuste antes de enviar. Capa: reduz o tamanho e envia.
+      var pronta = classe === "avatar"
+        ? abrirImagem(arquivo).then(ajustarFoto).then(function (c) { return c && canvasParaBlob(c); })
+        : processarImagem(arquivo, 1600, false);
+      input.value = "";
+      pronta.then(function (blob) { return blob && subir(blob); })
         .catch(o.falhou)
-        .then(function () { caixa.classList.remove("carregando"); input.value = ""; });
+        .then(function () { caixa.classList.remove("carregando"); });
     }
     input.addEventListener("change", function () { enviar(input.files[0]); });
     ["dragenter", "dragover"].forEach(function (ev) { caixa.addEventListener(ev, function (e) { e.preventDefault(); caixa.classList.add("arrastando"); }); });
