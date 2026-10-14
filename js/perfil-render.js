@@ -371,8 +371,10 @@
 
       if (emDestaque < DESTAQUES) {
         emDestaque++;
-        destaques.appendChild(el(acao ? "button" : "a",
-          Object.assign({ class: "perfil-rede", "aria-label": titulo, title: titulo }, abrir), [icone(nomeIcone)]));
+        // Destaque nas cores do próprio aplicativo (sem cor própria: a cor da página); a borda fica na cor da página
+        var bt = el(acao ? "button" : "a", Object.assign({ class: "perfil-rede destaque", "aria-label": titulo, title: titulo }, abrir), [icone(nomeIcone)]);
+        if (t.cor) { bt.style.background = t.cor; bt.style.color = t.corIcone || "#fff"; }
+        destaques.appendChild(bt);
         return;
       }
       var sub = t.sub ? t.sub(l) : "";

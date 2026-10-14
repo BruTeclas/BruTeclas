@@ -12,6 +12,13 @@ Cada versão publicada ganha um **ponto de restauração** no GitHub, um branch 
 
 Quando uma versão mexer no banco, ela também traz um script para desfazer a mudança. Os scripts ficam em `supabase/versoes/`.
 
+## v1.6.0 · 14/10/2026: destaques nas cores dos aplicativos (ponto de restauração `versao-1.6.0`)
+
+- **Situação:** pronta e testada; aguardando publicação.
+- **Destaques mais evidentes:** os botões redondos em destaque usam a cor original de cada app (degradê do Instagram, verde do WhatsApp, azul do Facebook etc.), com a borda na cor escolhida para a página. Site e link personalizado, que não têm cor própria, usam a cor da página.
+- Botões um pouco maiores e com sombra. Vale na página pública, na prévia do painel e na página do cliente.
+- **Banco:** não mudou.
+
 ## v1.5.0 · 14/10/2026: teste grátis de 3 dias (ponto de restauração `versao-1.5.0`)
 
 - **Publicada em 14/10/2026:** campo novo aplicado no banco; arquivos do site, do painel e da página do cliente no ar conferidos contra o pacote.
