@@ -14,7 +14,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## v1.6.0 · 14/10/2026: destaques nas cores dos aplicativos (ponto de restauração `versao-1.6.0`)
 
-- **Situação:** pronta e testada; aguardando publicação.
+- **Publicada em 14/10/2026:** arquivos do site, do painel e da página do cliente no ar conferidos contra o pacote.
 - **Destaques mais evidentes:** os botões redondos em destaque usam a cor original de cada app (degradê do Instagram, verde do WhatsApp, azul do Facebook etc.), com a borda na cor escolhida para a página. Site e link personalizado, que não têm cor própria, usam a cor da página.
 - Botões um pouco maiores e com sombra. Vale na página pública, na prévia do painel e na página do cliente.
 - **Banco:** não mudou.
