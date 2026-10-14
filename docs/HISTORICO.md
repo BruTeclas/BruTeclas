@@ -14,7 +14,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## v1.6.1 · 14/10/2026: ajustar a foto do perfil (ponto de restauração `versao-1.6.1`)
 
-- **Situação:** pronta e testada; aguardando publicação.
+- **Publicada em 14/10/2026:** arquivos do site, do painel e da página do cliente no ar conferidos contra o pacote.
 - **Janela "Ajustar foto":** ao escolher a foto de perfil, ela abre com o círculo do perfil por cima.
   - Arrastar (mouse ou dedo) para posicionar o rosto, zoom na barra (ou na rodinha do mouse) e girar 90°.
   - **Usar foto** envia o recorte; **Cancelar** (ou Esc) mantém a foto anterior.
