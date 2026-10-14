@@ -14,6 +14,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## v1.5.0 · 14/10/2026: teste grátis de 3 dias (ponto de restauração `versao-1.5.0`)
 
+- **Publicada em 14/10/2026:** campo novo aplicado no banco; arquivos do site, do painel e da página do cliente no ar conferidos contra o pacote.
 - **Teste grátis:** botão **"Teste 3 dias"** nos perfis em configuração. A página fica no ar hoje e mais 3 dias e depois sai sozinha.
   - Usa o vencimento automático da v1.1.0: o vencimento fica no dia do início.
   - Durante o teste, já dá para gerar o link para o cliente editar (v1.3.0).
