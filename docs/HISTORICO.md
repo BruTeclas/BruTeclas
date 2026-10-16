@@ -14,7 +14,7 @@ Quando uma versão mexer no banco, ela também traz um script para desfazer a mu
 
 ## v1.6.2 · 16/10/2026: ajustar a foto de fundo (ponto de restauração `versao-1.6.2`)
 
-- **Situação:** pronta e testada; aguardando publicação.
+- **Publicada em 16/10/2026:** arquivos do site e do painel no ar conferidos contra o pacote; os da página do cliente conferidos pelo tamanho.
 - **Janela "Ajustar foto de fundo":** a mesma da foto do perfil (arrastar, zoom e girar), com uma moldura retangular no formato da tela do celular (9:16). Também ganhou o botão **Ajustar** na foto atual.
 - **Fundo na primeira tela:** a foto de fundo passou a ocupar a primeira tela do celular e se dissolver na cor da página logo abaixo. Antes, ela se esticava pela altura da página inteira e, em páginas com muitos links, ficava muito ampliada. Assim, o que se enquadra na moldura é o que o visitante vê. A prévia do painel mostra o mesmo.
 - **Banco:** não mudou.
