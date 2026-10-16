@@ -189,9 +189,10 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .upload-ajustar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 2; border: 0; border-radius: 999px; padding: 4px 10px; background: rgba(0,0,0,.65); color: #fff; font: inherit; font-size: .72rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .upload-ajustar:hover { background: var(--primaria); }
 .ajuste-foto { max-width: 360px; }
-.ajuste-area { position: relative; width: 280px; height: 280px; margin: 4px auto 0; border-radius: 12px; overflow: hidden; background: var(--cinza-claro); }
-.ajuste-area::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 200px rgba(0, 0, 0, .5); border: 2px solid rgba(255, 255, 255, .9); pointer-events: none; }
-.ajuste-tela { display: block; width: 280px; height: 280px; cursor: grab; touch-action: none; }
+.ajuste-area { position: relative; margin: 4px auto 0; border-radius: 12px; overflow: hidden; background: var(--cinza-claro); }
+.ajuste-area::after { content: ""; position: absolute; inset: 0; border-radius: 12px; border: 2px solid rgba(255, 255, 255, .9); pointer-events: none; }
+.ajuste-area.circulo::after { border-radius: 50%; box-shadow: 0 0 0 200px rgba(0, 0, 0, .5); }
+.ajuste-tela { display: block; cursor: grab; touch-action: none; }
 .ajuste-tela:active { cursor: grabbing; }
 .ajuste-controles { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--texto2); }
 .ajuste-controles input[type=range] { flex: 1; accent-color: var(--primaria); }
@@ -235,6 +236,7 @@ input[type="color"] { padding: 4px; height: 42px; cursor: pointer; }
 .celular-tela { width: 100%; height: 100%; border-radius: 30px; overflow-y: auto; background: #0f0f14; scrollbar-width: none; }
 .celular-tela::-webkit-scrollbar { display: none; }
 .celular-tela > .perfil { min-height: 100%; }
+.celular-tela .perfil-capa { height: calc(min(720px, 100vh - 140px) - 24px); }
 .celular-tela .perfil-conteudo { padding-top: 36px; }
 
 /* Modais */

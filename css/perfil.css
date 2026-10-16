@@ -44,9 +44,14 @@
 }
 
 /* Foto de fundo */
+/* Ocupa a primeira tela do celular (o mesmo formato da moldura "Ajustar foto de fundo")
+   e se dissolve na cor da página logo abaixo */
 .perfil-capa {
-  position: absolute; inset: 0; z-index: -1;
+  position: absolute; top: 0; left: 0; right: 0; z-index: -1;
+  height: 100vh; height: 100svh;
   background-size: cover; background-position: center;
+  -webkit-mask-image: linear-gradient(180deg, #000 80%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 80%, transparent 100%);
 }
 .perfil-capa::after {
   content: ""; position: absolute; inset: 0;

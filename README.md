@@ -40,7 +40,7 @@ Quem lê o chaveiro vê **a mesma mensagem** para link desativado, vencido, em c
 
 ### O que dá para configurar em cada perfil
 
-- Foto de perfil e foto de fundo (redimensionadas automaticamente). A foto de perfil abre a janela **"Ajustar foto"**: arrastar para posicionar o rosto no círculo, zoom e girar. O botão **Ajustar**, na foto atual, reposiciona sem enviar de novo.
+- Foto de perfil e foto de fundo (redimensionadas automaticamente). As duas abrem a janela de ajuste: arrastar para posicionar, zoom e girar. A foto de perfil usa o círculo; a foto de fundo, uma moldura no formato da tela do celular, que é o espaço que ela ocupa na página (depois, ela se dissolve na cor da página). O botão **Ajustar**, na foto atual, reposiciona sem enviar de novo.
 - Cor principal e tema escuro ou claro.
 - Nome e descrição.
 - Links, na ordem que você quiser. **Os 2 primeiros da lista aparecem em destaque**, como ícones abaixo da descrição; os demais aparecem como botões:
